@@ -1,0 +1,14 @@
+-- =====================================================
+-- IPOS-PU Seed Data
+-- Nova Solutions — Team 24/C
+-- =====================================================
+-- Run AFTER ipos_pu_schema.sql.
+-- Populates test data for development and demo.
+--
+-- Required minimums:
+--   10+ products (for catalogue browsing demo)
+--   3+ members   (non-commercial, commercial, admin)
+--   Sample promotion campaigns
+-- =====================================================
+
+-- TODO: Daanish — Week 7, Days 2-3
