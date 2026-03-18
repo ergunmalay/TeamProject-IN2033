@@ -33,6 +33,7 @@
             <version>${javafx.version}</version>
         </dependency>
 
+
         <!-- MySQL JDBC Connector -->
         <dependency>
             <groupId>com.mysql</groupId>
