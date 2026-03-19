@@ -1,9 +1,8 @@
 package com.novasolutions.ipospu;
 
+import com.novasolutions.ipospu.gui.LoginScreen;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 /**
@@ -19,17 +18,14 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        // TODO: Replace with LoginScreen once Hassan/Marwan complete it
-        Label placeholder = new Label("IPOS-PU - Nova Solutions\nProject scaffold loaded successfully.");
-        placeholder.setStyle("-fx-font-size: 18px; -fx-text-alignment: center;");
+        // Load the first real screen of the application
+        LoginScreen root = new LoginScreen();
 
-        StackPane root = new StackPane(placeholder);
-        Scene scene = new Scene(root, 900, 600);
+        // Keep the window small and simple until JavaFX is stable
+        Scene scene = new Scene(root, 400, 250);
 
-        primaryStage.setTitle("IPOS-PU | InfoPharma Online Purchasing System");
+        primaryStage.setTitle("IPOS-PU | Login");
         primaryStage.setScene(scene);
-        primaryStage.setMinWidth(800);
-        primaryStage.setMinHeight(500);
         primaryStage.show();
     }
 
