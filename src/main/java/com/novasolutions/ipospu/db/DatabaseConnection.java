@@ -9,9 +9,9 @@ public class DatabaseConnection {
 
     private static DatabaseConnection instance;
 
-    private String url;
-    private String username;
-    private String password;
+    private final String url;
+    private final String username;
+    private final String password;
 
     private DatabaseConnection() {
         try {
