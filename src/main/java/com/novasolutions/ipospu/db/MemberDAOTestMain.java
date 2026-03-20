@@ -10,7 +10,7 @@ public class MemberDAOTestMain {
 
         if (member != null) {
             System.out.println("✅ Member found:");
-            System.out.println(member.name() + " | " + member.email());
+            System.out.println(member.fullName() + " | " + member.email()); // I updated this from name() to fullName() to match the renamed field
         } else {
             System.out.println("❌ Member not found");
         }
