@@ -66,8 +66,8 @@ public class MembershipService {
             return false;
         }
 
-        if (BCrypt.checkpw(password, member.getPasswordHash())) {
-            System.out.println("✅ Login successful for " + member.getName());
+        if (BCrypt.checkpw(password, member.passwordHash())) {
+            System.out.println("✅ Login successful for " + member.name());
             return true;
         } else {
             System.out.println("❌ Invalid email or password");
