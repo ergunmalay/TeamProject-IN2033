@@ -22,3 +22,16 @@
 -- =====================================================
 
 -- TODO: Dan + Daanish — Week 7, Days 2-3 (CRITICAL PATH)
+
+CREATE TABLE IF NOT EXISTS members (
+    id                 INT AUTO_INCREMENT PRIMARY KEY,
+    name               VARCHAR(100)        NOT NULL,
+    email              VARCHAR(255)        NOT NULL UNIQUE,
+    password_hash      VARCHAR(60)         NOT NULL,
+    member_type        VARCHAR(20)         NOT NULL,  -- 'NonCommercial' | 'Commercial'
+    membership_status  VARCHAR(20)         NOT NULL,  -- 'Approved' | 'Pending' | 'Rejected'
+    is_first_login     BOOLEAN             NOT NULL DEFAULT TRUE
+);
+
+-- Migration: run this if the members table already exists without is_first_login
+-- ALTER TABLE members ADD COLUMN is_first_login BOOLEAN NOT NULL DEFAULT TRUE;
