@@ -5,6 +5,6 @@ public record Member(int id,
                      String email,
                      String passwordHash,
                      String memberType,
-                     String membershipStatus
-) {
+                     String membershipStatus,
+                     boolean isFirstLogin) {
 }
