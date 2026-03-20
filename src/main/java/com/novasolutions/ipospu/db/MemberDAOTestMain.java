@@ -10,7 +10,7 @@ public class MemberDAOTestMain {
 
         if (member != null) {
             System.out.println("✅ Member found:");
-            System.out.println(member.getName() + " | " + member.getEmail());
+            System.out.println(member.name() + " | " + member.email());
         } else {
             System.out.println("❌ Member not found");
         }

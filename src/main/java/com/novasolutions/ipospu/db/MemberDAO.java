@@ -21,12 +21,11 @@ public class MemberDAO {
                 if (resultSet.next()) {
                     return new Member(
                             resultSet.getInt("id"),
-                            resultSet.getString("full_name"),
+                            resultSet.getString("name"),
                             resultSet.getString("email"),
                             resultSet.getString("password_hash"),
                             resultSet.getString("member_type"),
-                            resultSet.getString("membership_status"),
-                            resultSet.getBoolean("is_first_login")
+                            resultSet.getString("membership_status")
                     );
                 }
             }
@@ -57,7 +56,7 @@ public class MemberDAO {
     }
 
     public boolean createMember(String name, String email, String passwordHash, String memberType, String membershipStatus) {
-        String sql = "INSERT INTO members (full_name, email, password_hash, member_type, membership_status, created_at, is_first_login) VALUES (?, ?, ?, ?, ?, NOW(), ?)";
+        String sql = "INSERT INTO members (name, email, password_hash, member_type, membership_status) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection connection = DatabaseConnection.getInstance().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -67,7 +66,6 @@ public class MemberDAO {
             preparedStatement.setString(3, passwordHash);
             preparedStatement.setString(4, memberType);
             preparedStatement.setString(5, membershipStatus);
-            preparedStatement.setBoolean(6, true);
 
             int rowsAffected = preparedStatement.executeUpdate();
             System.out.println("Member created: " + email);
