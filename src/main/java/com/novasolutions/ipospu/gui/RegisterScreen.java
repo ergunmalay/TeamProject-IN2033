@@ -2,9 +2,13 @@ package com.novasolutions.ipospu.gui;
 
 import com.novasolutions.ipospu.controller.RegistrationController;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -21,6 +25,11 @@ public class RegisterScreen extends VBox {
 
         Button registerButton = new Button("Register");
         Label messageLabel = new Label();
+        Button copyButton = new Button("📋");
+        copyButton.setVisible(false);
+
+        HBox passwordRow = new HBox(10, messageLabel, copyButton);
+        passwordRow.setAlignment(Pos.CENTER_LEFT);
 
         Button backButton = new Button("Back to Login");
 
@@ -31,7 +40,7 @@ public class RegisterScreen extends VBox {
                 nameField,
                 emailField,
                 registerButton,
-                messageLabel,
+                passwordRow,
                 backButton
         );
 
@@ -42,11 +51,19 @@ public class RegisterScreen extends VBox {
             String generatedPassword = registrationController.registerNonCommercial(name, email);
 
             if (generatedPassword != null) {
-                messageLabel.setText("Registration successful!\nYour password: " + generatedPassword);
+                messageLabel.setText("Registration successful! Your password: " + generatedPassword);
+                copyButton.setVisible(true);
+                copyButton.setOnAction(ce -> {
+                    ClipboardContent content = new ClipboardContent();
+                    content.putString(generatedPassword);
+                    Clipboard.getSystemClipboard().setContent(content);
+                    copyButton.setText("✓");
+                });
                 nameField.clear();
                 emailField.clear();
             } else {
                 messageLabel.setText("Registration failed. Email may already be in use.");
+                copyButton.setVisible(false);
             }
         });
 
