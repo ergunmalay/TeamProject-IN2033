@@ -7,14 +7,16 @@ public class Member {
     private String passwordHash;
     private String memberType;
     private String membershipStatus;
+    private boolean isFirstLogin;
 
-    public Member(int id, String name, String email, String passwordHash, String memberType, String membershipStatus) {
+    public Member(int id, String name, String email, String passwordHash, String memberType, String membershipStatus, boolean isFirstLogin) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.passwordHash = passwordHash;
         this.memberType = memberType;
         this.membershipStatus = membershipStatus;
+        this.isFirstLogin = isFirstLogin;
     }
 
     public int getId() {
@@ -39,5 +41,9 @@ public class Member {
 
     public String getMembershipStatus() {
         return membershipStatus;
+    }
+
+    public boolean isFirstLogin() {
+        return isFirstLogin;
     }
 }
