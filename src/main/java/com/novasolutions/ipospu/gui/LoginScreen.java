@@ -1,6 +1,7 @@
 package com.novasolutions.ipospu.gui;
 
 import com.novasolutions.ipospu.controller.LoginController;
+import com.novasolutions.ipospu.service.LoginResult;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -38,12 +39,14 @@ public class LoginScreen extends VBox {
             String email = emailField.getText();
             String password = passwordField.getText();
 
-            boolean success = loginController.login(email, password);
+            LoginResult result = loginController.login(email, password);
 
-            if (success) {
-                messageLabel.setText("Login successful!");
+            if (result.isSuccess()) {
+                messageLabel.setStyle("-fx-text-fill: green;");
+                messageLabel.setText(result.getMessage());
             } else {
-                messageLabel.setText("Login failed. Please check your credentials.");
+                messageLabel.setStyle("-fx-text-fill: red;");
+                messageLabel.setText(result.getMessage());
             }
         });
 

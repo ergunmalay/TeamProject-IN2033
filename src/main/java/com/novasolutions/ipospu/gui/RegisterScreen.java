@@ -1,6 +1,7 @@
 package com.novasolutions.ipospu.gui;
 
 import com.novasolutions.ipospu.controller.RegistrationController;
+import com.novasolutions.ipospu.service.RegistrationResult;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -48,21 +49,21 @@ public class RegisterScreen extends VBox {
             String name = nameField.getText();
             String email = emailField.getText();
 
-            String generatedPassword = registrationController.registerNonCommercial(name, email);
+            RegistrationResult result = registrationController.registerNonCommercial(name, email);
 
-            if (generatedPassword != null) {
-                messageLabel.setText("Registration successful! Your password: " + generatedPassword);
+            if (result.isSuccess()) {
+                messageLabel.setText("Registration successful! Your password: " + result.getPassword());
                 copyButton.setVisible(true);
                 copyButton.setOnAction(ce -> {
                     ClipboardContent content = new ClipboardContent();
-                    content.putString(generatedPassword);
+                    content.putString(result.getPassword());
                     Clipboard.getSystemClipboard().setContent(content);
-                    copyButton.setText("✓");
+                    copyButton.setText("📋");
                 });
                 nameField.clear();
                 emailField.clear();
             } else {
-                messageLabel.setText("Registration failed. Email may already be in use.");
+                messageLabel.setText(result.getMessage());
                 copyButton.setVisible(false);
             }
         });
