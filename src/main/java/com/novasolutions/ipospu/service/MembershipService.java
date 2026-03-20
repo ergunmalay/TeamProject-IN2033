@@ -45,65 +45,74 @@ public class MembershipService {
     }
 
     /**
-     * UC-02: I authenticate a member by verifying their email and BCrypt-hashed password.
+     * UC-02: Authenticates a member by verifying their email and BCrypt-hashed password.
      *
-     * @return true if credentials are valid, false otherwise
+     * @param email the member's email address
+     * @param password the plain-text password entered by the user
+     * @return a LoginResult indicating success or failure; contains a user-facing
+     * message describing the outcome
      */
-    public boolean login(String email, String password) {
+    public LoginResult login(String email, String password) {
         // I reject null or blank inputs before touching the database.
         if (email == null || password == null) {
             System.out.println("❌ Email and password cannot be empty");
-            return false;
+            return LoginResult.failure("Email and password cannot be empty.");
         }
 
         if (email.isBlank() || password.isBlank()) {
             System.out.println("❌ Email and password cannot be blank");
-            return false;
+            return LoginResult.failure("Email and password cannot be blank.");
         }
 
         Member member = memberDAO.findByEmail(email);
 
         if (member == null) {
             System.out.println("❌ No member found with email: " + email);
-            return false;
+            return LoginResult.failure("No account found with that email address.");
         }
 
         // I use BCrypt to compare the plain-text input against the stored hash.
         if (BCrypt.checkpw(password, member.passwordHash())) {
             System.out.println("✅ Login successful for " + member.fullName());
-            return true;
+            return LoginResult.success("Login successful!");
         } else {
             System.out.println("❌ Invalid email or password");
-            return false;
+            return LoginResult.failure("Invalid email or password.");
         }
     }
 
     /**
-     * UC-01a: I register a new non-commercial member.
-     * I generate a random password, hash it with BCrypt, and store the account.
-     * The is_first_login flag defaults to true in the DB so the member is prompted
-     * to change their password on first login.
+     * UC-01a: Registers a new non-commercial member.
+     * Generates a random password, hashes it with BCrypt, and stores the account.
+     * The is_first_login flag defaults to true in the database so the member can
+     * be prompted to change their password on first login.
      *
-     * @param name  the member's full name
+     * @param name the member's full name
      * @param email the member's email address (used as their username)
-     * @return the generated plain-text password to be sent by email, or null if registration failed
+     * @return a RegistrationResult indicating success or failure; contains the
+     * generated password on success or an error message on failure
      */
-    public String registerNonCommercial(String name, String email) {
+    public RegistrationResult registerNonCommercial(String name, String email) {
         // I reject null or blank inputs early to avoid unnecessary DB calls.
         if (name == null || email == null) {
             System.out.println("❌ Name and email cannot be null");
-            return null;
+            return RegistrationResult.failure("Name and email cannot be empty");
+        }
+
+        if (!email.contains("@")) {
+            System.out.println("❌ Invalid email format: " + email);
+            return RegistrationResult.failure("Invalid email format");
         }
 
         if (name.isBlank() || email.isBlank()) {
             System.out.println("❌ Name and email cannot be blank");
-            return null;
+            return RegistrationResult.failure("Name and email cannot be blank");
         }
 
         // I check for duplicate emails before attempting to insert.
         if (memberDAO.emailExists(email)) {
             System.out.println("❌ Email already exists: " + email);
-            return null;
+            return RegistrationResult.failure("Email already in use");
         }
 
         String plainPassword = generatePassword();
@@ -113,10 +122,10 @@ public class MembershipService {
         boolean created = memberDAO.createMember(name, email, hashedPassword, "NON_COMMERCIAL", "APPROVED");
         if (created) {
             System.out.println("✅ Registration successful for " + name);
-            return plainPassword;
+            return RegistrationResult.success(plainPassword);
         } else {
             System.out.println("❌ Registration failed for " + name);
-            return null;
+            return RegistrationResult.failure("Registration failed due to a database error");
         }
     }
 }
