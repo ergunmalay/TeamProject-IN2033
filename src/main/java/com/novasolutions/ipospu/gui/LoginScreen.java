@@ -42,8 +42,9 @@ public class LoginScreen extends VBox {
             LoginResult result = loginController.login(email, password);
 
             if (result.isSuccess()) {
-                messageLabel.setStyle("-fx-text-fill: green;");
-                messageLabel.setText(result.getMessage());
+                Stage stage = (Stage) getScene().getWindow();
+                stage.getScene().setRoot(new DashboardScreen(stage, email));
+                stage.setTitle("IPOS-PU | Dashboard");
             } else {
                 messageLabel.setStyle("-fx-text-fill: red;");
                 messageLabel.setText(result.getMessage());
