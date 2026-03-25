@@ -23,7 +23,7 @@ public class LoginScreen extends VBox {
 
         Button loginButton = new Button("Login");
         Label messageLabel = new Label();
-        Button registerButton = new Button("Register as Non-Commercial Member");
+        Button registerButton = new Button("Register");
 
         setSpacing(10);
         setPadding(new Insets(20));
@@ -43,7 +43,7 @@ public class LoginScreen extends VBox {
 
             if (result.isSuccess()) {
                 Stage stage = (Stage) getScene().getWindow();
-                stage.getScene().setRoot(new DashboardScreen(stage, email));
+                stage.getScene().setRoot(new DashboardScreen(stage, result.getMember()));
                 stage.setTitle("IPOS-PU | Dashboard");
             } else {
                 messageLabel.setStyle("-fx-text-fill: red;");
@@ -53,8 +53,8 @@ public class LoginScreen extends VBox {
 
         registerButton.setOnAction(e -> {
             Stage stage = (Stage) getScene().getWindow();
-            stage.getScene().setRoot(new RegisterScreen(stage));
-            stage.setTitle("IPOS-PU | Register");
+            stage.getScene().setRoot(new RegistrationChoiceScreen(stage));
+            stage.setTitle("IPOS-PU | Registration");
         });
     }
 }

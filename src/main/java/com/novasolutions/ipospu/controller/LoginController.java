@@ -16,6 +16,6 @@ public class LoginController {
      * message describing the outcome
      */
     public LoginResult login(String email, String password) {
-        return membershipService.login(email, password);
+        return membershipService.authenticate(email, password);
     }
 }

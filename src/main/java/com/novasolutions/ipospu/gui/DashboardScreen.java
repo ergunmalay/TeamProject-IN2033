@@ -1,5 +1,6 @@
 package com.novasolutions.ipospu.gui;
 
+import com.novasolutions.ipospu.model.Member;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -14,7 +15,6 @@ public class DashboardScreen extends BorderPane {
         Label title = new Label("IPOS-PU Dashboard");
         title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #fbfbfb;");
 
-
         VBox topBar = new VBox(title);
         topBar.setPadding(new Insets(10));
         topBar.setStyle("-fx-background-color: #2c3e50; -fx-text-fill: white;");
@@ -22,11 +22,13 @@ public class DashboardScreen extends BorderPane {
         return topBar;
     }
 
-    private VBox createMainContent(Stage stage, String email) {
-        Label welcomeLabel = new Label("Welcome, " + email + "!");
+    private VBox createMainContent(Stage stage, Member member) {
+        Label welcomeLabel = new Label("Welcome, " + member.fullName() + "!");
         welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-        Label subtitleLabel = new Label("You are now logged in.");
+        Label subtitleLabel = new Label(
+                "You are now logged in as " + member.fullName() + " " + member.email() + "."
+        );
         subtitleLabel.setStyle("-fx-text-fill: gray;");
 
         Button logoutButton = new Button("Logout");
@@ -43,8 +45,8 @@ public class DashboardScreen extends BorderPane {
         return content;
     }
 
-    public DashboardScreen(Stage stage, String email) {
+    public DashboardScreen(Stage stage, Member member) {
         setTop(createTopBar());
-        setCenter(createMainContent(stage, email));
+        setCenter(createMainContent(stage, member));
     }
 }
