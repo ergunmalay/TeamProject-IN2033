@@ -109,4 +109,22 @@ public class MemberDAO {
         return false;
     }
 
+    public boolean setNewPassword(String email, String newPasswordHash) {
+        String sql = "UPDATE members SET password_hash = ?, is_first_login = false WHERE email = ?";
+
+        try (Connection connection = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, newPasswordHash);
+            preparedStatement.setString(2, email);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 }

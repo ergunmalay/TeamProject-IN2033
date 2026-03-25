@@ -42,9 +42,15 @@ public class LoginScreen extends VBox {
             LoginResult result = loginController.login(email, password);
 
             if (result.isSuccess()) {
-                Stage stage = (Stage) getScene().getWindow();
-                stage.getScene().setRoot(new DashboardScreen(stage, result.getMember()));
-                stage.setTitle("IPOS-PU | Dashboard");
+                if (result.getMember().isFirstLogin()) {
+                    Stage stage = (Stage) getScene().getWindow();
+                    stage.getScene().setRoot(new ChangePasswordScreen(stage, result.getMember()));
+                    stage.setTitle("IPOS-PU | Change Password");
+                } else {
+                    Stage stage = (Stage) getScene().getWindow();
+                    stage.getScene().setRoot(new DashboardScreen(stage, result.getMember()));
+                    stage.setTitle("IPOS-PU | Dashboard");
+                }
             } else {
                 messageLabel.setStyle("-fx-text-fill: red;");
                 messageLabel.setText(result.getMessage());

@@ -19,9 +19,10 @@ public class CommercialRegisterScreen extends VBox {
         title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
         Label info = new Label(
-                "Complete the form below to submit a commercial membership application.\n" +
-                "Applications are reviewed by a System Administrator before approval.\n" +
-                "No login-ready account will be created until your application is approved.");
+                """
+                        Complete the form below to submit a commercial membership application.
+                        Applications are reviewed by a System Administrator before approval.
+                        No login-ready account will be created until your application is approved.""");
         info.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
         info.setWrapText(true);
 
