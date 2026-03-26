@@ -97,7 +97,7 @@ public class MembershipService {
 
     /**
      * UC-01b: Submits a commercial membership application for SA review.
-     *
+     * <p>
      * A PENDING COMMERCIAL member row is created immediately (so full_name and
      * company_name are stored) alongside the commercial_applications row.
      * Both inserts happen in a single transaction inside the DAO.

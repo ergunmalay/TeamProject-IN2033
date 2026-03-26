@@ -10,6 +10,7 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         LoginScreen root = new LoginScreen();
+
         Scene scene = new Scene(root, 420, 300);
 
         // I set a minimum size so that navigating between screens never clips content.
@@ -20,7 +21,10 @@ public class MainApp extends Application {
         primaryStage.show();
     }
 
+    @SuppressWarnings("unused")
     public static void main(String[] args) {
         launch(args);
+
     }
+
 }

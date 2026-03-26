@@ -4,9 +4,7 @@ import com.novasolutions.ipospu.controller.RegistrationController;
 import com.novasolutions.ipospu.service.RegistrationResult;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
@@ -23,7 +21,7 @@ public class NonCommercialRegisterScreen extends VBox {
 
         Label info = new Label(
                 "A temporary password will be generated for you.\n" +
-                "You will be required to change it on your first login.");
+                        "You will be required to change it on your first login.");
         info.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
         info.setWrapText(true);
 
@@ -57,21 +55,18 @@ public class NonCommercialRegisterScreen extends VBox {
             RegistrationResult result = registrationController.registerNonCommercial(name, email);
 
             if (result.isSuccess()) {
-                messageLabel.setStyle("-fx-text-fill: green;");
-                messageLabel.setText(
-                        "Registration successful!\n" +
-                        "Your temporary password: " + result.getPassword() + "\n\n" +
-                        "Important: You will be asked to change this password when you first log in.");
-                copyButton.setVisible(true);
-                copyButton.setText("Copy Password");
-                copyButton.setOnAction(ce -> {
-                    ClipboardContent content = new ClipboardContent();
-                    content.putString(result.getPassword());
-                    Clipboard.getSystemClipboard().setContent(content);
-                    copyButton.setText("Copied!");
-                });
+
+                showSuccessAlert(result.getPassword());
+
                 nameField.clear();
                 emailField.clear();
+
+                messageLabel.setText("");
+                copyButton.setVisible(false);
+
+                stage.getScene().setRoot(new LoginScreen());
+                stage.setTitle("IPOS-PU | Login");
+
             } else {
                 messageLabel.setStyle("-fx-text-fill: red;");
                 messageLabel.setText(result.getMessage());
@@ -82,6 +77,32 @@ public class NonCommercialRegisterScreen extends VBox {
         backButton.setOnAction(e -> {
             stage.getScene().setRoot(new RegistrationChoiceScreen(stage));
             stage.setTitle("IPOS-PU | Registration");
+        });
+    }
+
+    private void showSuccessAlert(String password) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Registration Successful");
+        alert.setHeaderText("Your Account Has Been Created");
+
+        alert.setContentText(
+                "Your temporary password:\n\n" + password + "\n\n" +
+                        "Important:\n" +
+                        "- Copy this password now\n" +
+                        "- You will be required to change it on first login"
+        );
+
+        ButtonType copyButtonType = new ButtonType("Copy Password");
+        ButtonType okButtonType = new ButtonType("OK");
+
+        alert.getButtonTypes().setAll(copyButtonType, okButtonType);
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == copyButtonType) {
+                ClipboardContent content = new ClipboardContent();
+                content.putString(password);
+                Clipboard.getSystemClipboard().setContent(content);
+            }
         });
     }
 }

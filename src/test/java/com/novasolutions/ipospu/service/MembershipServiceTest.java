@@ -30,7 +30,8 @@ public class MembershipServiceTest {
     @AfterEach
     void cleanup() {
         if (testEmail != null) {
-            memberDAO.deleteMemberByEmail(testEmail);
+            boolean deleted = memberDAO.deleteMemberByEmail(testEmail);
+            assertTrue(deleted, "Cleanup failed: test member was not deleted");
         }
     }
 

@@ -3,6 +3,7 @@ package com.novasolutions.ipospu.db;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Properties;
 
 public class DatabaseConnection {
@@ -43,7 +44,7 @@ public class DatabaseConnection {
         return instance;
     }
 
-    public Connection getConnection() throws Exception {
+    public Connection getConnection() throws SQLException {
         return DriverManager.getConnection(url, username, password);
     }
 }

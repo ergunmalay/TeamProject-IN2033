@@ -1,9 +1,9 @@
 /**
  * JavaFX GUI screens.
- *
+ * <p>
  * Each screen corresponds to one or more use cases. Screens call Controllers
  * to perform actions — they should NOT contain business logic or SQL directly.
- *
+ * <p>
  * Planned screens:
  * - LoginScreen            (UC-02 - Hassan, Week 7)
  * - RegistrationScreen     (UC-01a/b - Hassan/Marwan, Week 7)
@@ -16,7 +16,7 @@
  * - PromotionsScreen       (UC-15/16 - Marwan, Week 9)
  * - ReportsScreen          (UC-17/18/19 - Daanish/Marwan/Alesha, Week 10)
  * - NavigationBar          (shared component - Hassan)
- *
+ * <p>
  * GUI consistency (5 marks): Consistent nav bar, buttons, fonts, error messages.
  */
 package com.novasolutions.ipospu.gui;
