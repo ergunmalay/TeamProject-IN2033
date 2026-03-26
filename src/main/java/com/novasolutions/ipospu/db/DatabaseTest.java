@@ -1,20 +1,19 @@
 package com.novasolutions.ipospu.db;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 public class DatabaseTest {
 
     public static void main(String[] args) {
-        try {
-            Connection conn = DatabaseConnection.getInstance().getConnection();
+        try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
 
             if (conn != null) {
-                System.out.println("✅ Database connected successfully!");
+                System.out.println("Database connected successfully");
             }
 
-        } catch (Exception e) {
-            System.out.println("❌ Connection failed:");
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("Connection failed: " + e.getMessage());
         }
     }
 }

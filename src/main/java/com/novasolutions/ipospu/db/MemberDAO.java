@@ -7,13 +7,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-// I use this DAO to handle all direct database operations for the members table.
-// I keep SQL logic here so the service layer stays free of JDBC concerns.
 public class MemberDAO {
 
-    // I look up a member by their email address — used during login and duplicate checks.
     public Member findByEmail(String email) {
-        String sql = "SELECT * FROM members WHERE email = ?";
+        String sql = """
+                SELECT id, full_name, email, password_hash, member_type, membership_status,
+                       company_name, order_count, is_first_login, created_at
+                FROM members
+                WHERE email = ?
+                """;
 
         try (Connection connection = DatabaseConnection.getInstance().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -22,8 +24,6 @@ public class MemberDAO {
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    // I map each column to the corresponding Member record field.
-                    // I use 'full_name' here because I renamed the column from 'name'.
                     return new Member(
                             resultSet.getLong("id"),
                             resultSet.getString("full_name"),
@@ -39,14 +39,14 @@ public class MemberDAO {
                 }
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("[ERROR] Failed to fetch member by email: " + email);
+            System.err.println(e.getMessage());
         }
 
         return null;
     }
 
-    // I check email existence separately to avoid fetching a full Member object just for a duplicate check.
     public boolean emailExists(String email) {
         String sql = "SELECT 1 FROM members WHERE email = ?";
 
@@ -59,16 +59,20 @@ public class MemberDAO {
                 return resultSet.next();
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("[ERROR] Failed to check email existence: " + email);
+            System.err.println(e.getMessage());
         }
         return false;
     }
 
-    // I insert a new member row. I omit order_count and is_first_login
-    // because the DB handles their defaults (0 and 1 respectively).
-    public boolean createMember(String fullName, String email, String passwordHash, String memberType, String membershipStatus) {
-        String sql = "INSERT INTO members (full_name, email, password_hash, member_type, membership_status, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
+    public boolean createMember(String fullName, String email, String passwordHash,
+                                String memberType, String membershipStatus) {
+
+        String sql = """
+                INSERT INTO members (full_name, email, password_hash, member_type, membership_status, created_at)
+                VALUES (?, ?, ?, ?, ?, NOW())
+                """;
 
         try (Connection connection = DatabaseConnection.getInstance().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -80,18 +84,16 @@ public class MemberDAO {
             preparedStatement.setString(5, membershipStatus);
 
             int rowsAffected = preparedStatement.executeUpdate();
-            System.out.println("Member created: " + email);
             return rowsAffected > 0;
 
         } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            System.err.println("[ERROR] Failed to create member: " + email);
+            System.err.println(e.getMessage());
         }
+
         return false;
     }
 
-    // I use this primarily in tests to clean up member rows by email.
     public boolean deleteMemberByEmail(String email) {
         String sql = "DELETE FROM members WHERE email = ?";
 
@@ -103,10 +105,29 @@ public class MemberDAO {
             int rowsAffected = preparedStatement.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("[ERROR] Failed to delete member: " + email);
+            System.err.println(e.getMessage());
         }
         return false;
     }
 
+    public boolean setNewPassword(String email, String newPasswordHash) {
+        String sql = "UPDATE members SET password_hash = ?, is_first_login = false WHERE email = ?";
+
+        try (Connection connection = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, newPasswordHash);
+            preparedStatement.setString(2, email);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            System.err.println("[ERROR] Failed to update password for: " + email);
+            System.err.println(e.getMessage());
+        }
+        return false;
+    }
 }

@@ -1,9 +1,9 @@
 /**
  * Database access layer (Data Access Objects).
- *
+ * <p>
  * Each DAO class handles CRUD operations for one database table.
  * All DAOs depend on DatabaseConnection to get a JDBC connection.
- *
+ * <p>
  * Planned classes:
  * - DatabaseConnection  (JDBC singleton - Ergun, Week 7, CRITICAL PATH)
  * - MemberDAO           (members table - Alesha, Week 7)

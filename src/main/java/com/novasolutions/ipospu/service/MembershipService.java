@@ -97,11 +97,11 @@ public class MembershipService {
 
     /**
      * UC-01b: Submits a commercial membership application for SA review.
-     *
+     * <p>
      * A PENDING COMMERCIAL member row is created immediately (so full_name and
      * company_name are stored) alongside the commercial_applications row.
      * Both inserts happen in a single transaction inside the DAO.
-     *
+     * <p>
      * The member is given a placeholder BCrypt hash of a random UUID — nobody
      * knows the plaintext so the account cannot be logged into until an SA
      * approves the application and sets a real password.
@@ -190,6 +190,40 @@ public class MembershipService {
             return LoginResult.success("Login successful", member);
         } else {
             return LoginResult.failure("Invalid email or password");
+        }
+    }
+    public ChangePasswordResult changePassword(String email, String newPassword, String confirmPassword) {
+
+        // 1. Null checks
+        if (email == null || newPassword == null || confirmPassword == null) {
+            return ChangePasswordResult.failure("All fields are required");
+        }
+
+        // 2. Blank checks
+        if (email.isBlank() || newPassword.isBlank() || confirmPassword.isBlank()) {
+            return ChangePasswordResult.failure("All fields are required");
+        }
+
+        // 3. Password match check
+        if (!newPassword.equals(confirmPassword)) {
+            return ChangePasswordResult.failure("Passwords do not match");
+        }
+
+        // 4. Optional: enforce basic password rule (recommended)
+        if (newPassword.length() < 6) {
+            return ChangePasswordResult.failure("Password must be at least 6 characters");
+        }
+
+        // 5. Hash password
+        String hashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+
+        // 6. Update DB
+        boolean updated = memberDAO.setNewPassword(email, hashedPassword);
+
+        if (updated) {
+            return ChangePasswordResult.success("Password updated successfully");
+        } else {
+            return ChangePasswordResult.failure("Failed to update password");
         }
     }
 }

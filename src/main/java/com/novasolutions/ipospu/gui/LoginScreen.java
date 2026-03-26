@@ -1,6 +1,8 @@
 package com.novasolutions.ipospu.gui;
 
 import com.novasolutions.ipospu.controller.LoginController;
+import com.novasolutions.ipospu.db.DatabaseResetDAO;
+import com.novasolutions.ipospu.model.Member;
 import com.novasolutions.ipospu.service.LoginResult;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -22,8 +24,9 @@ public class LoginScreen extends VBox {
         passwordField.setPromptText("Password");
 
         Button loginButton = new Button("Login");
-        Label messageLabel = new Label();
         Button registerButton = new Button("Register");
+        Button resetDatabaseButton = new Button("Reset Database");
+        Label messageLabel = new Label();
 
         setSpacing(10);
         setPadding(new Insets(20));
@@ -32,7 +35,8 @@ public class LoginScreen extends VBox {
                 passwordField,
                 loginButton,
                 messageLabel,
-                registerButton
+                registerButton,
+                resetDatabaseButton
         );
 
         loginButton.setOnAction(e -> {
@@ -43,8 +47,15 @@ public class LoginScreen extends VBox {
 
             if (result.isSuccess()) {
                 Stage stage = (Stage) getScene().getWindow();
-                stage.getScene().setRoot(new DashboardScreen(stage, result.getMember()));
-                stage.setTitle("IPOS-PU | Dashboard");
+                Member member = result.getMember();
+
+                if (member.isFirstLogin()) {
+                    stage.getScene().setRoot(new ChangePasswordScreen(stage, member));
+                    stage.setTitle("IPOS-PU | Change Password");
+                } else {
+                    stage.getScene().setRoot(new DashboardScreen(stage, member));
+                    stage.setTitle("IPOS-PU | Dashboard");
+                }
             } else {
                 messageLabel.setStyle("-fx-text-fill: red;");
                 messageLabel.setText(result.getMessage());
@@ -55,6 +66,18 @@ public class LoginScreen extends VBox {
             Stage stage = (Stage) getScene().getWindow();
             stage.getScene().setRoot(new RegistrationChoiceScreen(stage));
             stage.setTitle("IPOS-PU | Registration");
+        });
+
+        resetDatabaseButton.setOnAction(e -> {
+            boolean success = DatabaseResetDAO.resetMembersAndCommercialApplications();
+
+            if (success) {
+                messageLabel.setStyle("-fx-text-fill: green;");
+                messageLabel.setText("Development database reset successfully.");
+            } else {
+                messageLabel.setStyle("-fx-text-fill: red;");
+                messageLabel.setText("Failed to reset development database.");
+            }
         });
     }
 }
