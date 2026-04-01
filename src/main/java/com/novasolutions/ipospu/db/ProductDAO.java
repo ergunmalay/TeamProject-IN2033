@@ -7,39 +7,42 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class ProductDAO {
-    public List<Product> getAllActiveProducts() {
+
+    public List<Product> getAllProducts() {
         String sql = """
-            SELECT id, name, description, price, stock_quantity, active
-            FROM products
-            WHERE active = 1
-        """;
+                SELECT stock_item_id, item_code, item_name, package_type,
+                       unit, unit_per_pack, package_cost, quantity_in_stock
+                FROM ca_stock_items
+                """;
 
-
-        try (Connection connection = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+        try (Connection connection = DatabaseConnection.getInstance().getCaConnection();
+             PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
             List<Product> products = new ArrayList<>();
-            while (resultSet.next()) {
-                products.add(new Product(
-                        resultSet.getLong("id"),
-                        resultSet.getString("name"),
-                        resultSet.getString("description"),
-                        resultSet.getDouble("price"),
-                        resultSet.getInt("stock_quantity"),
-                        resultSet.getBoolean("active")
-                ));
+            while (rs.next()) {
+                products.add(mapRow(rs));
             }
             return products;
+
         } catch (SQLException e) {
-            System.err.println("[ERROR] Failed to fetch products: " + e.getMessage());
-            return Collections.emptyList();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to fetch products from ipos_ca: " + e.getMessage(), e);
         }
+    }
+
+    private Product mapRow(ResultSet rs) throws SQLException {
+        return new Product(
+                rs.getInt("stock_item_id"),
+                rs.getString("item_code"),
+                rs.getString("item_name"),
+                rs.getString("package_type"),
+                rs.getString("unit"),
+                rs.getInt("unit_per_pack"),
+                rs.getDouble("package_cost") * 2,
+                rs.getInt("quantity_in_stock")
+        );
     }
 }

@@ -4,105 +4,164 @@ import com.novasolutions.ipospu.controller.RegistrationController;
 import com.novasolutions.ipospu.service.RegistrationResult;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-public class NonCommercialRegisterScreen extends VBox {
+public class NonCommercialRegisterScreen extends BorderPane {
 
     private final RegistrationController registrationController = new RegistrationController();
 
     public NonCommercialRegisterScreen(Stage stage) {
-        Label title = new Label("Register - Non-Commercial Member");
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-        Label info = new Label(
-                "A temporary password will be generated for you.\n" +
-                        "You will be required to change it on your first login.");
-        info.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
-        info.setWrapText(true);
+        // ── Minimal top bar ───────────────────────────────────────────────
+        setTop(buildMinimalTopBar(stage));
 
+        // ── Main content centered ─────────────────────────────────────────
+        StackPane content = new StackPane();
+        content.setStyle("-fx-background-color: " + AppStyles.SURFACE + ";");
+        content.setPadding(new Insets(48));
+
+        // ── Form card ─────────────────────────────────────────────────────
+        Label title = new Label("Non-Commercial Registration");
+        title.setStyle(AppStyles.headline());
+
+        Label subtitle = new Label("Access the IPOS-PU internal procurement system for individual institutional use.");
+        subtitle.setStyle(AppStyles.bodyMuted());
+        subtitle.setWrapText(true);
+
+        Label nameLabel = new Label("FULL NAME");
+        nameLabel.setStyle(AppStyles.fieldLabel());
         TextField nameField = new TextField();
-        nameField.setPromptText("Full name");
+        nameField.setPromptText("Enter your legal name");
+        nameField.setStyle(AppStyles.inputField());
+        VBox nameGroup = new VBox(6, nameLabel, nameField);
 
+        Label emailLabel = new Label("INSTITUTIONAL EMAIL");
+        emailLabel.setStyle(AppStyles.fieldLabel());
         TextField emailField = new TextField();
-        emailField.setPromptText("Email address");
-
-        Button registerButton = new Button("Register");
+        emailField.setPromptText("name@organization.com");
+        emailField.setStyle(AppStyles.inputField());
+        VBox emailGroup = new VBox(6, emailLabel, emailField);
 
         Label messageLabel = new Label();
         messageLabel.setWrapText(true);
+        messageLabel.setMaxWidth(Double.MAX_VALUE);
 
-        Button copyButton = new Button("Copy Password");
-        copyButton.setVisible(false);
+        Button registerBtn = new Button("Register →");
+        registerBtn.setStyle(AppStyles.ghostGradBtn() + "-fx-padding: 12 32;");
+        registerBtn.setOnMouseEntered(e -> registerBtn.setStyle(
+                AppStyles.ghostGradBtn() + "-fx-padding: 12 32; -fx-opacity: 0.9;"));
+        registerBtn.setOnMouseExited(e -> registerBtn.setStyle(
+                AppStyles.ghostGradBtn() + "-fx-padding: 12 32;"));
 
-        HBox passwordRow = new HBox(10, messageLabel, copyButton);
-        passwordRow.setAlignment(Pos.CENTER_LEFT);
+        Button backLink = new Button("← Back to login");
+        backLink.setStyle("-fx-background-color: transparent; -fx-text-fill: " + AppStyles.PRIMARY + ";" +
+                          "-fx-font-size: 13px; -fx-cursor: hand; -fx-border-color: transparent;");
 
-        Button backButton = new Button("Back");
+        HBox actions = new HBox(16, registerBtn, backLink);
+        actions.setAlignment(Pos.CENTER_LEFT);
 
-        setSpacing(10);
-        setPadding(new Insets(24));
-        getChildren().addAll(title, info, nameField, emailField, registerButton, passwordRow, backButton);
+        // ── Success panel (hidden until success) ──────────────────────────
+        Label successTitle = new Label("Registration Successful");
+        successTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: " + AppStyles.ON_SURFACE + ";");
 
-        registerButton.setOnAction(e -> {
-            String name = nameField.getText();
-            String email = emailField.getText();
+        Label successSub = new Label("Your temporary password is shown below. Copy it before continuing.");
+        successSub.setStyle(AppStyles.bodyMuted());
+        successSub.setWrapText(true);
 
-            RegistrationResult result = registrationController.registerNonCommercial(name, email);
+        Label passwordDisplay = new Label();
+        passwordDisplay.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: " + AppStyles.PRIMARY + ";" +
+                                 "-fx-background-color: " + AppStyles.SURFACE_LOW + ";" +
+                                 "-fx-background-radius: 6; -fx-padding: 12 20; -fx-font-family: monospace;");
+        passwordDisplay.setMaxWidth(Double.MAX_VALUE);
+
+        Button copyBtn = new Button("Copy Password");
+        copyBtn.setStyle(AppStyles.ghostGradBtn() + "-fx-padding: 10 20;");
+
+        Label securityNote = new Label("You will be prompted to update this password on first login.");
+        securityNote.setStyle("-fx-font-size: 11px; -fx-text-fill: " + AppStyles.ON_SURFACE_VAR + "; -fx-font-style: italic;");
+
+        VBox successPanel = new VBox(12, successTitle, successSub, passwordDisplay, copyBtn, securityNote);
+        successPanel.setStyle("-fx-background-color: " + AppStyles.SURFACE_HIGH + ";" +
+                              "-fx-background-radius: 10; -fx-padding: 24;" +
+                              "-fx-border-color: " + AppStyles.PRIMARY + "; -fx-border-width: 0 0 0 4;" +
+                              "-fx-border-radius: 0 10 10 0;");
+        successPanel.setVisible(false);
+        successPanel.setManaged(false);
+
+        VBox card = new VBox(24, title, subtitle, nameGroup, emailGroup, messageLabel, actions, successPanel);
+        card.setStyle(AppStyles.card());
+        card.setMaxWidth(520);
+        card.setEffect(AppStyles.cardShadow());
+
+        content.setAlignment(Pos.CENTER);
+        content.getChildren().add(card);
+        setCenter(content);
+
+        // ── Handlers ──────────────────────────────────────────────────────
+        registerBtn.setOnAction(e -> {
+            RegistrationResult result = registrationController.registerNonCommercial(
+                    nameField.getText(), emailField.getText());
 
             if (result.isSuccess()) {
-
-                showSuccessAlert(result.getPassword());
-
+                passwordDisplay.setText(result.getPassword());
+                successPanel.setVisible(true);
+                successPanel.setManaged(true);
+                messageLabel.setText("");
+                registerBtn.setDisable(true);
                 nameField.clear();
                 emailField.clear();
-
-                messageLabel.setText("");
-                copyButton.setVisible(false);
-
-                stage.getScene().setRoot(new LoginScreen());
-                stage.setTitle("IPOS-PU | Login");
-
             } else {
-                messageLabel.setStyle("-fx-text-fill: red;");
+                messageLabel.setStyle(AppStyles.errorStyle());
                 messageLabel.setText(result.getMessage());
-                copyButton.setVisible(false);
             }
         });
 
-        backButton.setOnAction(e -> {
+        copyBtn.setOnAction(e -> {
+            ClipboardContent cc = new ClipboardContent();
+            cc.putString(passwordDisplay.getText());
+            Clipboard.getSystemClipboard().setContent(cc);
+            copyBtn.setText("Copied ✓");
+        });
+
+        backLink.setOnAction(e -> {
             stage.getScene().setRoot(new RegistrationChoiceScreen(stage));
             stage.setTitle("IPOS-PU | Registration");
         });
     }
 
-    private void showSuccessAlert(String password) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Registration Successful");
-        alert.setHeaderText("Your Account Has Been Created");
+    private HBox buildMinimalTopBar(Stage stage) {
+        Label logo = new Label("IPOS-PU");
+        logo.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;");
 
-        alert.setContentText(
-                "Your temporary password:\n\n" + password + "\n\n" +
-                        "Important:\n" +
-                        "- Copy this password now\n" +
-                        "- You will be required to change it on first login"
-        );
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        ButtonType copyButtonType = new ButtonType("Copy Password");
-        ButtonType okButtonType = new ButtonType("OK");
-
-        alert.getButtonTypes().setAll(copyButtonType, okButtonType);
-
-        alert.showAndWait().ifPresent(response -> {
-            if (response == copyButtonType) {
-                ClipboardContent content = new ClipboardContent();
-                content.putString(password);
-                Clipboard.getSystemClipboard().setContent(content);
-            }
+        Button cancelBtn = new Button("← Cancel");
+        cancelBtn.setStyle("-fx-background-color: rgba(255,255,255,0.1); -fx-text-fill: white;" +
+                           "-fx-font-size: 12px; -fx-background-radius: 6; -fx-padding: 7 14; -fx-cursor: hand;");
+        cancelBtn.setOnAction(e -> {
+            stage.getScene().setRoot(new RegistrationChoiceScreen(stage));
+            stage.setTitle("IPOS-PU | Registration");
         });
+
+        HBox bar = new HBox(logo, spacer, cancelBtn);
+        bar.setAlignment(Pos.CENTER_LEFT);
+        bar.setPadding(new Insets(0, 20, 0, 24));
+        bar.setPrefHeight(64);
+        bar.setMinHeight(64);
+        bar.setMaxHeight(64);
+        bar.setStyle("-fx-background-color: " + AppStyles.NAVY + ";");
+        return bar;
     }
 }
