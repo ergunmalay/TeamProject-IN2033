@@ -17,7 +17,7 @@ public class MemberDAO {
                 WHERE email = ?
                 """;
 
-        try (Connection connection = DatabaseConnection.getInstance().getConnection();
+        try (Connection connection = DatabaseConnection.getInstance().getPuConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatement.setString(1, email);
@@ -50,7 +50,7 @@ public class MemberDAO {
     public boolean emailExists(String email) {
         String sql = "SELECT 1 FROM members WHERE email = ?";
 
-        try (Connection connection = DatabaseConnection.getInstance().getConnection();
+        try (Connection connection = DatabaseConnection.getInstance().getPuConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatement.setString(1, email);
@@ -74,7 +74,7 @@ public class MemberDAO {
                 VALUES (?, ?, ?, ?, ?, NOW())
                 """;
 
-        try (Connection connection = DatabaseConnection.getInstance().getConnection();
+        try (Connection connection = DatabaseConnection.getInstance().getPuConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatement.setString(1, fullName);
@@ -97,7 +97,7 @@ public class MemberDAO {
     public boolean deleteMemberByEmail(String email) {
         String sql = "DELETE FROM members WHERE email = ?";
 
-        try (Connection connection = DatabaseConnection.getInstance().getConnection();
+        try (Connection connection = DatabaseConnection.getInstance().getPuConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatement.setString(1, email);
@@ -115,7 +115,7 @@ public class MemberDAO {
     public boolean setNewPassword(String email, String newPasswordHash) {
         String sql = "UPDATE members SET password_hash = ?, is_first_login = false WHERE email = ?";
 
-        try (Connection connection = DatabaseConnection.getInstance().getConnection();
+        try (Connection connection = DatabaseConnection.getInstance().getPuConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatement.setString(1, newPasswordHash);

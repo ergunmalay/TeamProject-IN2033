@@ -5,79 +5,170 @@ import com.novasolutions.ipospu.db.DatabaseResetDAO;
 import com.novasolutions.ipospu.model.Member;
 import com.novasolutions.ipospu.service.LoginResult;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-public class LoginScreen extends VBox {
+public class LoginScreen extends StackPane {
 
     private final LoginController loginController = new LoginController();
 
     public LoginScreen() {
+        setStyle("-fx-background-color: " + AppStyles.SURFACE + ";");
+
+        // ── Logo block ────────────────────────────────────────────────────
+        Label logoText = new Label("IPOS-PU");
+        logoText.setStyle("-fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: " + AppStyles.NAVY + ";");
+
+        Label logoSub = new Label("INTERNAL PROCUREMENT SYSTEM");
+        logoSub.setStyle("-fx-font-size: 10px; -fx-font-weight: bold;" +
+                         "-fx-text-fill: " + AppStyles.ON_SURFACE_VAR + "; -fx-letter-spacing: 2px;");
+
+        VBox logoBlock = new VBox(6, logoText, logoSub);
+        logoBlock.setAlignment(Pos.CENTER);
+
+        // ── Error banner ──────────────────────────────────────────────────
+        Label errorLabel = new Label();
+        errorLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: " + AppStyles.ON_ERROR_CONT + ";" +
+                            "-fx-background-color: " + AppStyles.ERROR_CONT + ";" +
+                            "-fx-background-radius: 6; -fx-padding: 10 14;");
+        errorLabel.setWrapText(true);
+        errorLabel.setMaxWidth(Double.MAX_VALUE);
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
+
+        // ── Email field ───────────────────────────────────────────────────
+        Label emailLabel = new Label("EMAIL ADDRESS");
+        emailLabel.setStyle(AppStyles.fieldLabel());
+
         TextField emailField = new TextField();
-        emailField.setPromptText("Enter email");
+        emailField.setPromptText("name@company.com");
+        emailField.setStyle(AppStyles.inputField());
+
+        VBox emailGroup = new VBox(6, emailLabel, emailField);
+
+        // ── Password field ────────────────────────────────────────────────
+        Label passLabel = new Label("PASSWORD");
+        passLabel.setStyle(AppStyles.fieldLabel());
 
         PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("Password");
+        passwordField.setPromptText("••••••••");
+        passwordField.setStyle(AppStyles.inputField());
 
-        Button loginButton = new Button("Login");
-        Button registerButton = new Button("Register");
-        Button resetDatabaseButton = new Button("Reset Database");
-        Label messageLabel = new Label();
+        VBox passGroup = new VBox(6, passLabel, passwordField);
 
-        setSpacing(10);
-        setPadding(new Insets(20));
-        getChildren().addAll(
-                emailField,
-                passwordField,
+        // ── Login button ──────────────────────────────────────────────────
+        Button loginButton = new Button("Login →");
+        loginButton.setMaxWidth(Double.MAX_VALUE);
+        loginButton.setStyle(AppStyles.ghostGradBtn() + "-fx-padding: 13 0;");
+        loginButton.setOnMouseEntered(e -> loginButton.setStyle(
+                AppStyles.ghostGradBtn() + "-fx-padding: 13 0; -fx-opacity: 0.9;"));
+        loginButton.setOnMouseExited(e -> loginButton.setStyle(
+                AppStyles.ghostGradBtn() + "-fx-padding: 13 0;"));
+
+        // ── Register link ─────────────────────────────────────────────────
+        Label registerPrompt = new Label("Don't have an account?");
+        registerPrompt.setStyle(AppStyles.bodyMuted());
+
+        Button registerLink = new Button("Register");
+        registerLink.setStyle("-fx-background-color: transparent; -fx-text-fill: " + AppStyles.PRIMARY + ";" +
+                              "-fx-font-size: 13px; -fx-font-weight: bold; -fx-cursor: hand;" +
+                              "-fx-padding: 0; -fx-border-color: transparent;");
+
+        HBox registerRow = new HBox(4, registerPrompt, registerLink);
+        registerRow.setAlignment(Pos.CENTER);
+
+        // ── Dev reset (small, tucked away) ────────────────────────────────
+        Button resetBtn = new Button("Reset Dev DB");
+        resetBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: rgba(64,72,79,0.4);" +
+                          "-fx-font-size: 10px; -fx-cursor: hand; -fx-border-color: transparent;");
+
+        // ── Card ──────────────────────────────────────────────────────────
+        VBox card = new VBox(20,
+                errorLabel,
+                buildCardHeader(),
+                emailGroup,
+                passGroup,
                 loginButton,
-                messageLabel,
-                registerButton,
-                resetDatabaseButton
+                registerRow,
+                resetBtn
         );
+        card.setStyle(AppStyles.card());
+        card.setMaxWidth(420);
+        card.setEffect(AppStyles.cardShadow());
 
-        loginButton.setOnAction(e -> {
-            String email = emailField.getText();
-            String password = passwordField.getText();
+        // ── Page container ────────────────────────────────────────────────
+        VBox container = new VBox(40, logoBlock, card);
+        container.setAlignment(Pos.TOP_CENTER);
+        container.setMaxWidth(420);
 
-            LoginResult result = loginController.login(email, password);
+        setAlignment(Pos.CENTER);
+        setPadding(new Insets(40));
+        getChildren().add(container);
 
-            if (result.isSuccess()) {
-                Stage stage = (Stage) getScene().getWindow();
-                Member member = result.getMember();
+        // ── Event handlers ────────────────────────────────────────────────
+        loginButton.setOnAction(e -> handleLogin(
+                emailField.getText(), passwordField.getText(), errorLabel));
 
-                if (member.isFirstLogin()) {
-                    stage.getScene().setRoot(new ChangePasswordScreen(stage, member));
-                    stage.setTitle("IPOS-PU | Change Password");
-                } else {
-                    stage.getScene().setRoot(new DashboardScreen(stage, member));
-                    stage.setTitle("IPOS-PU | Dashboard");
-                }
-            } else {
-                messageLabel.setStyle("-fx-text-fill: red;");
-                messageLabel.setText(result.getMessage());
-            }
-        });
+        passwordField.setOnAction(e -> handleLogin(
+                emailField.getText(), passwordField.getText(), errorLabel));
 
-        registerButton.setOnAction(e -> {
+        registerLink.setOnAction(e -> {
             Stage stage = (Stage) getScene().getWindow();
             stage.getScene().setRoot(new RegistrationChoiceScreen(stage));
             stage.setTitle("IPOS-PU | Registration");
         });
 
-        resetDatabaseButton.setOnAction(e -> {
-            boolean success = DatabaseResetDAO.resetMembersAndCommercialApplications();
-
-            if (success) {
-                messageLabel.setStyle("-fx-text-fill: green;");
-                messageLabel.setText("Development database reset successfully.");
-            } else {
-                messageLabel.setStyle("-fx-text-fill: red;");
-                messageLabel.setText("Failed to reset development database.");
-            }
+        resetBtn.setOnAction(e -> {
+            boolean ok = DatabaseResetDAO.resetPuTables();
+            errorLabel.setStyle("-fx-font-size: 12px;" +
+                    "-fx-background-radius: 6; -fx-padding: 10 14;" +
+                    (ok ? "-fx-text-fill: " + AppStyles.SURFACE_TINT + "; -fx-background-color: #e8f5e9;"
+                        : "-fx-text-fill: " + AppStyles.ON_ERROR_CONT + "; -fx-background-color: " + AppStyles.ERROR_CONT + ";"));
+            errorLabel.setText(ok ? "Development database reset successfully." : "Failed to reset database.");
+            errorLabel.setVisible(true);
+            errorLabel.setManaged(true);
         });
+    }
+
+    private VBox buildCardHeader() {
+        Label heading = new Label("Architectural Ledger Access");
+        heading.setStyle(AppStyles.sectionTitle());
+
+        Label sub = new Label("Please enter your internal credentials to continue.");
+        sub.setStyle(AppStyles.bodyMuted());
+        sub.setWrapText(true);
+
+        return new VBox(4, heading, sub);
+    }
+
+    private void handleLogin(String email, String password, Label errorLabel) {
+        LoginResult result = loginController.login(email, password);
+
+        if (result.isSuccess()) {
+            Stage stage = (Stage) getScene().getWindow();
+            Member member = result.getMember();
+
+            if (member.isFirstLogin()) {
+                stage.getScene().setRoot(new ChangePasswordScreen(stage, member));
+                stage.setTitle("IPOS-PU | Update Password");
+            } else {
+                stage.getScene().setRoot(new DashboardScreen(stage, member));
+                stage.setTitle("IPOS-PU | Dashboard");
+            }
+        } else {
+            errorLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: " + AppStyles.ON_ERROR_CONT + ";" +
+                                "-fx-background-color: " + AppStyles.ERROR_CONT + ";" +
+                                "-fx-background-radius: 6; -fx-padding: 10 14;");
+            errorLabel.setText(result.getMessage());
+            errorLabel.setVisible(true);
+            errorLabel.setManaged(true);
+        }
     }
 }

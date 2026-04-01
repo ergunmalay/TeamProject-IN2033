@@ -7,7 +7,7 @@ public class CommercialApplicationDAO {
     public boolean pendingApplicationExistsForEmail(String email) {
         String sql = "SELECT 1 FROM commercial_applications WHERE email = ? AND status = 'PENDING'";
 
-        try (Connection connection = DatabaseConnection.getInstance().getConnection();
+        try (Connection connection = DatabaseConnection.getInstance().getPuConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
             preparedStatement.setString(1, email);
@@ -40,7 +40,7 @@ public class CommercialApplicationDAO {
         Connection connection = null;
 
         try {
-            connection = DatabaseConnection.getInstance().getConnection();
+            connection = DatabaseConnection.getInstance().getPuConnection();
             connection.setAutoCommit(false);
 
             long memberId;
