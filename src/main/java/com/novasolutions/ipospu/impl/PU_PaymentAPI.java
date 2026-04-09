@@ -38,7 +38,7 @@ public class PU_PaymentAPI implements PaymentAPI {
         String masked = maskCard(String.valueOf(cardNumber));
         String sql = """
                 INSERT INTO payments (order_id, amount, card_number_masked, expiry, status, transaction_id, processed_at)
-                VALUES (0, ?, ?, ?, 'AUTHORISED', ?, ?)
+                VALUES (NULL, ?, ?, ?, 'AUTHORISED', ?, ?)
                 """;
 
         try (Connection conn = DatabaseConnection.getInstance().getPuConnection();

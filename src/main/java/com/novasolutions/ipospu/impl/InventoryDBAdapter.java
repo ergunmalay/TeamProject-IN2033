@@ -22,15 +22,12 @@ import java.sql.SQLException;
  * been verified — update the constants below once Aiven access is confirmed.
  */
 public class InventoryDBAdapter implements I_Inventory {
-
-    // -----------------------------------------------------------------------
-    // Update these constants once ipos_ca schema is confirmed with Team 23
-    // -----------------------------------------------------------------------
+    
     private static final String CA_TABLE  = "ipos_ca.ca_stock_items";
-    private static final String COL_ID    = "id";
-    private static final String COL_NAME  = "item_name";        // assumed — verify with Team 23
-    private static final String COL_PRICE = "unit_price";       // assumed — verify with Team 23
-    private static final String COL_STOCK = "quantity_in_stock"; // assumed — verify with Team 23
+    private static final String COL_ID    = "stock_item_id";
+    private static final String COL_NAME  = "item_name";
+    private static final String COL_PRICE = "package_cost";
+    private static final String COL_STOCK = "quantity_in_stock";
     // -----------------------------------------------------------------------
 
     /**
@@ -53,7 +50,7 @@ public class InventoryDBAdapter implements I_Inventory {
             ResultSet rs = ps.executeQuery();
 
             if (!rs.next()) return false;
-            return rs.getInt("quantity_in_stock") >= quantity;
+            return rs.getInt(COL_STOCK) >= quantity;
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -82,7 +79,7 @@ public class InventoryDBAdapter implements I_Inventory {
                 ps.setInt(1, itemID);
                 ResultSet rs = ps.executeQuery();
                 if (!rs.next()) throw new IllegalArgumentException("Item not found: " + itemID);
-                int available = rs.getInt("quantity_in_stock");
+                int available = rs.getInt(COL_STOCK);
                 if (available < quantity) {
                     throw new IllegalStateException("Insufficient stock: requested " + quantity + ", available " + available);
                 }
@@ -119,10 +116,10 @@ public class InventoryDBAdapter implements I_Inventory {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                sb.append(rs.getInt("id")).append("|")
-                  .append(rs.getString("item_name")).append("|")
-                  .append(rs.getBigDecimal("unit_price")).append("|")
-                  .append(rs.getInt("quantity_in_stock")).append("\n");
+                sb.append(rs.getInt(COL_ID)).append("|")
+                  .append(rs.getString(COL_NAME)).append("|")
+                  .append(rs.getBigDecimal(COL_PRICE)).append("|")
+                  .append(rs.getInt(COL_STOCK)).append("\n");
             }
 
         } catch (SQLException e) {
