@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE TABLE IF NOT EXISTS payments (
     id                   BIGINT          AUTO_INCREMENT PRIMARY KEY,
-    order_id             BIGINT          NOT NULL,
+    order_id             BIGINT          NULL,
     amount               DECIMAL(10,2)   NOT NULL,
     card_number_masked   VARCHAR(19)     NOT NULL,  -- stores first 4 and last 4 digits only
     expiry               VARCHAR(5)      NOT NULL,  -- MM/YY
