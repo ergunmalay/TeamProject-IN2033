@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -72,9 +73,14 @@ public class RegistrationChoiceScreen extends StackPane {
         container.setAlignment(Pos.TOP_CENTER);
         container.setMaxWidth(860);
 
+        ScrollPane scroll = new ScrollPane(container);
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setStyle("-fx-background-color: " + AppStyles.SURFACE + "; -fx-background: " + AppStyles.SURFACE + ";");
+
         setAlignment(Pos.CENTER);
         setPadding(new Insets(48));
-        getChildren().add(container);
+        getChildren().add(scroll);
 
         // ── Handlers ──────────────────────────────────────────────────────
         nonCommBtn.setOnAction(e -> {

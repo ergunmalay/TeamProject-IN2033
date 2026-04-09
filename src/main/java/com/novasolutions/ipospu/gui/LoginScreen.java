@@ -9,6 +9,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -108,9 +109,14 @@ public class LoginScreen extends StackPane {
         container.setAlignment(Pos.TOP_CENTER);
         container.setMaxWidth(420);
 
+        ScrollPane scroll = new ScrollPane(container);
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setStyle("-fx-background-color: " + AppStyles.SURFACE + "; -fx-background: " + AppStyles.SURFACE + ";");
+
         setAlignment(Pos.CENTER);
         setPadding(new Insets(40));
-        getChildren().add(container);
+        getChildren().add(scroll);
 
         // ── Event handlers ────────────────────────────────────────────────
         loginButton.setOnAction(e -> handleLogin(
@@ -154,6 +160,12 @@ public class LoginScreen extends StackPane {
         if (result.isSuccess()) {
             Stage stage = (Stage) getScene().getWindow();
             Member member = result.getMember();
+
+            stage.setMinWidth(1320);
+            stage.setMinHeight(900);
+            stage.setWidth(1360);
+            stage.setHeight(920);
+            stage.centerOnScreen();
 
             if (member.isFirstLogin()) {
                 stage.getScene().setRoot(new ChangePasswordScreen(stage, member));
