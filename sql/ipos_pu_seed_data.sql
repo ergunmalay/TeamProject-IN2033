@@ -11,6 +11,8 @@
 --   Sample promotion campaigns
 -- =====================================================
 
+USE ipos_pu;
+
 -- Clear existing data (safe for dev resets)
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE campaign_tracking;
