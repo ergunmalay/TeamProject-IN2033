@@ -217,11 +217,10 @@ public class CartScreen extends BorderPane {
         Button checkoutBtn = new Button("Proceed to Checkout");
         checkoutBtn.setStyle(AppStyles.ghostGradBtn() + "-fx-padding: 12 24;");
         checkoutBtn.setMaxWidth(Double.MAX_VALUE);
-        checkoutBtn.setDisable(true); // UC-08 not yet implemented
-
-        Label comingSoon = new Label("Checkout coming soon");
-        comingSoon.setStyle("-fx-font-size: 11px; -fx-text-fill: " + AppStyles.ON_SURFACE_VAR + ";");
-        comingSoon.setAlignment(Pos.CENTER);
+        checkoutBtn.setOnAction(e -> {
+            stage.getScene().setRoot(new CheckoutScreen(stage, member));
+            stage.setTitle("IPOS-PU | Checkout");
+        });
 
         Button continueShopping = new Button("← Continue Shopping");
         continueShopping.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 10 20;");
@@ -232,7 +231,7 @@ public class CartScreen extends BorderPane {
         });
 
         VBox summary = new VBox(16, summaryTitle, sep, totalCaption, totalLabel,
-                                checkoutBtn, comingSoon, continueShopping);
+                                checkoutBtn, continueShopping);
         summary.setPadding(new Insets(24));
         summary.setMinWidth(260);
         summary.setMaxWidth(280);

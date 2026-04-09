@@ -38,6 +38,7 @@ public interface I_MerchantAccount {
     /**
      * Retrieves the invoice for a specified order.
      *
+     *
      * @param orderID the unique order identifier. Must correspond to an existing order.
      * @return a String containing the invoice details.
      */

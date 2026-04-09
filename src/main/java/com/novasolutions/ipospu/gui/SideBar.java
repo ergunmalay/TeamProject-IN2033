@@ -43,7 +43,7 @@ public class SideBar extends VBox {
         });
 
         navOrders.setOnMouseClicked(e -> {
-            stage.getScene().setRoot(new OrdersScreen(stage, member));
+            stage.getScene().setRoot(new OrderHistoryScreen(stage, member));
             stage.setTitle("IPOS-PU | My Orders");
         });
 
