@@ -28,12 +28,18 @@ public class SideBar extends VBox {
 
         // ── Nav items ─────────────────────────────────────────────────────
         VBox navCatalogue = navItem("View Catalogue", "catalogue".equals(activeItem));
+        VBox navCart      = navItem("My Cart",        "cart".equals(activeItem));
         VBox navOrders    = navItem("My Orders",      "orders".equals(activeItem));
         VBox navProfile   = navItem("My Profile",     "profile".equals(activeItem));
 
         navCatalogue.setOnMouseClicked(e -> {
             stage.getScene().setRoot(new CatalogueScreen(stage, member));
             stage.setTitle("IPOS-PU | Catalogue");
+        });
+
+        navCart.setOnMouseClicked(e -> {
+            stage.getScene().setRoot(new CartScreen(stage, member));
+            stage.setTitle("IPOS-PU | My Cart");
         });
 
         navOrders.setOnMouseClicked(e -> {
@@ -46,7 +52,7 @@ public class SideBar extends VBox {
             stage.setTitle("IPOS-PU | My Profile");
         });
 
-        VBox nav = new VBox(4, navCatalogue, navOrders, navProfile);
+        VBox nav = new VBox(4, navCatalogue, navCart, navOrders, navProfile);
 
         // ── Spacer ────────────────────────────────────────────────────────
         Region spacer = new Region();

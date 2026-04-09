@@ -3,6 +3,9 @@ package com.novasolutions.ipospu.gui;
 import com.novasolutions.ipospu.controller.CatalogueController;
 import com.novasolutions.ipospu.model.Member;
 import com.novasolutions.ipospu.model.Product;
+import com.novasolutions.ipospu.service.CartService;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -26,6 +29,7 @@ import javafx.stage.Stage;
 public class CatalogueScreen extends BorderPane {
 
     private final CatalogueController catalogueController = new CatalogueController();
+    private final CartService cartService = new CartService();
 
     public CatalogueScreen(Stage stage, Member member) {
         setTop(new TopBar(stage, member));
@@ -85,7 +89,7 @@ public class CatalogueScreen extends BorderPane {
                         || p.getPackageType().toLowerCase().contains(lower);
                 }));
 
-        TableView<Product> table = buildTable();
+        TableView<Product> table = buildTable(stage, member);
         table.setItems(filtered);
         table.setMinHeight(400);
 
@@ -113,7 +117,7 @@ public class CatalogueScreen extends BorderPane {
     }
 
     @SuppressWarnings("unchecked")
-    private TableView<Product> buildTable() {
+    private TableView<Product> buildTable(Stage stage, Member member) {
         TableView<Product> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setStyle("-fx-background-color: transparent; -fx-table-cell-border-color: transparent;");
@@ -135,7 +139,8 @@ public class CatalogueScreen extends BorderPane {
                 col("Unit",          "unit",           80),
                 intCol("Units/Pack", "unitsPerPack",   90),
                 priceCol(),
-                stockCol()
+                stockCol(),
+                addToCartCol(stage, member)
         );
 
         table.setPlaceholder(buildEmptyState());
@@ -248,6 +253,72 @@ public class CatalogueScreen extends BorderPane {
         footer.setPadding(new Insets(12, 16, 12, 16));
         footer.setStyle("-fx-background-color: " + AppStyles.SURFACE_HIGH + "; -fx-background-radius: 0 0 12 12;");
         return footer;
+    }
+
+    private TableColumn<Product, Void> addToCartCol(Stage stage, Member member) {
+        TableColumn<Product, Void> col = new TableColumn<>("");
+        col.setMinWidth(130);
+        col.setSortable(false);
+        styleHeader(col);
+        col.setCellFactory(tc -> new TableCell<>() {
+            private final Button btn = new Button("Add to Cart");
+            private final Label  msg = new Label();
+            private final VBox   box = new VBox(4, btn, msg);
+            {
+                btn.setStyle(AppStyles.ghostGradBtn() + "-fx-padding: 6 14; -fx-font-size: 12px;");
+                msg.setStyle("-fx-font-size: 10px;");
+                box.setAlignment(Pos.CENTER);
+
+                PauseTransition clearMsg = new PauseTransition(Duration.millis(800));
+                clearMsg.setOnFinished(ev -> msg.setText(""));
+
+                btn.setOnAction(e -> {
+                    Product p = getTableView().getItems().get(getIndex());
+                    clearMsg.stop();
+                    msg.setText("");
+
+                    if (p.getStockQuantity() <= 0) {
+                        msg.setText("Out of stock");
+                        msg.setStyle(AppStyles.errorStyle());
+                        return;
+                    }
+
+                    btn.setDisable(true);
+                    new Thread(() -> {
+                        CartService.AddResult result = cartService.addToCart(member, p.getId(), 1);
+                        javafx.application.Platform.runLater(() -> {
+                            btn.setDisable(false);
+                            switch (result) {
+                                case SUCCESS -> {
+                                    msg.setText("Added!");
+                                    msg.setStyle(AppStyles.successStyle());
+                                }
+                                case OUT_OF_STOCK -> {
+                                    msg.setText("Out of stock");
+                                    msg.setStyle(AppStyles.errorStyle());
+                                }
+                                case INSUFFICIENT_STOCK -> {
+                                    msg.setText("Not enough stock");
+                                    msg.setStyle(AppStyles.errorStyle());
+                                }
+                            }
+                            clearMsg.playFromStart();
+                        });
+                    }).start();
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) { setGraphic(null); }
+                else {
+                    msg.setText("");
+                    setGraphic(box);
+                }
+            }
+        });
+        return col;
     }
 
     private VBox buildEmptyState() {
