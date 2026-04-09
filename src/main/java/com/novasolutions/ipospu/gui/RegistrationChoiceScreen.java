@@ -73,13 +73,18 @@ public class RegistrationChoiceScreen extends StackPane {
         container.setAlignment(Pos.TOP_CENTER);
         container.setMaxWidth(860);
 
-        ScrollPane scroll = new ScrollPane(container);
+        StackPane centeredWrapper = new StackPane(container);
+        centeredWrapper.setAlignment(Pos.CENTER);
+        centeredWrapper.setStyle("-fx-background-color: " + AppStyles.SURFACE + ";");
+        centeredWrapper.setPadding(new Insets(48));
+
+        ScrollPane scroll = new ScrollPane(centeredWrapper);
         scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroll.setStyle("-fx-background-color: " + AppStyles.SURFACE + "; -fx-background: " + AppStyles.SURFACE + ";");
 
         setAlignment(Pos.CENTER);
-        setPadding(new Insets(48));
         getChildren().add(scroll);
 
         // ── Handlers ──────────────────────────────────────────────────────

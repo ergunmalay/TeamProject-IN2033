@@ -12,13 +12,13 @@ public class MainApp extends Application {
     public void start(Stage primaryStage) {
         LoginScreen root = new LoginScreen();
 
-        Scene scene = new Scene(root, 560, 680);
+        Scene scene = new Scene(root, 900, 700);
 
         // Windows taskbar icon (stage.getIcons() works on Windows/Linux)
         primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.png")));
 
-        primaryStage.setMinWidth(520);
-        primaryStage.setMinHeight(600);
+        primaryStage.setMinWidth(900);
+        primaryStage.setMinHeight(700);
         primaryStage.setTitle("IPOS-PU | Login");
         primaryStage.setScene(scene);
         primaryStage.show();
