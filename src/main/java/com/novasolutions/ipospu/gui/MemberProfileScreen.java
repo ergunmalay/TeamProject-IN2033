@@ -101,7 +101,7 @@ public class MemberProfileScreen extends BorderPane {
 
         ScrollPane scroll = new ScrollPane(page);
         scroll.setFitToWidth(true);
-        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scroll.setStyle("-fx-background-color: " + AppStyles.SURFACE + "; -fx-background: " + AppStyles.SURFACE + ";");
         return scroll;
     }

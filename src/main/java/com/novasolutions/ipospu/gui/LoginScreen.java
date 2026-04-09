@@ -9,10 +9,12 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 
 public class LoginScreen extends StackPane {
@@ -108,9 +110,19 @@ public class LoginScreen extends StackPane {
         container.setAlignment(Pos.TOP_CENTER);
         container.setMaxWidth(420);
 
+        StackPane centeredWrapper = new StackPane(container);
+        centeredWrapper.setAlignment(Pos.CENTER);
+        centeredWrapper.setStyle("-fx-background-color: " + AppStyles.SURFACE + ";");
+        centeredWrapper.setPadding(new Insets(40));
+
+        ScrollPane scroll = new ScrollPane(centeredWrapper);
+        scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setStyle("-fx-background-color: " + AppStyles.SURFACE + "; -fx-background: " + AppStyles.SURFACE + ";");
+
         setAlignment(Pos.CENTER);
-        setPadding(new Insets(40));
-        getChildren().add(container);
+        getChildren().add(scroll);
 
         // ── Event handlers ────────────────────────────────────────────────
         loginButton.setOnAction(e -> handleLogin(
@@ -138,10 +150,10 @@ public class LoginScreen extends StackPane {
     }
 
     private VBox buildCardHeader() {
-        Label heading = new Label("Architectural Ledger Access");
+        Label heading = new Label("Login");
         heading.setStyle(AppStyles.sectionTitle());
 
-        Label sub = new Label("Please enter your internal credentials to continue.");
+        Label sub = new Label("Please enter your credentials to continue.");
         sub.setStyle(AppStyles.bodyMuted());
         sub.setWrapText(true);
 
@@ -154,6 +166,12 @@ public class LoginScreen extends StackPane {
         if (result.isSuccess()) {
             Stage stage = (Stage) getScene().getWindow();
             Member member = result.getMember();
+
+            stage.setMinWidth(1320);
+            stage.setMinHeight(900);
+            stage.setWidth(1360);
+            stage.setHeight(920);
+            stage.centerOnScreen();
 
             if (member.isFirstLogin()) {
                 stage.getScene().setRoot(new ChangePasswordScreen(stage, member));

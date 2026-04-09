@@ -76,9 +76,14 @@ public class CatalogueScreen extends BorderPane {
         filterBar.setStyle("-fx-background-color: " + AppStyles.SURFACE_LOW + "; -fx-background-radius: 12;");
 
         // ── Table ─────────────────────────────────────────────────────────
-        ObservableList<Product> data = FXCollections.observableArrayList(
-                catalogueController.loadProducts());
+        ObservableList<Product> data = FXCollections.observableArrayList();
         FilteredList<Product> filtered = new FilteredList<>(data, p -> true);
+
+        // Load products in background so screen renders immediately
+        new Thread(() -> {
+            java.util.List<Product> products = catalogueController.loadProducts();
+            javafx.application.Platform.runLater(() -> data.setAll(products));
+        }).start();
 
         searchField.textProperty().addListener((obs, old, val) ->
                 filtered.setPredicate(p -> {
@@ -111,7 +116,7 @@ public class CatalogueScreen extends BorderPane {
 
         ScrollPane scroll = new ScrollPane(page);
         scroll.setFitToWidth(true);
-        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scroll.setStyle("-fx-background-color: " + AppStyles.SURFACE + "; -fx-background: " + AppStyles.SURFACE + ";");
         return scroll;
     }

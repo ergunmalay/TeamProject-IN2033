@@ -8,6 +8,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -108,7 +109,12 @@ public class ChangePasswordScreen extends BorderPane {
 
         content.setAlignment(Pos.CENTER);
         content.getChildren().add(card);
-        setCenter(content);
+
+        ScrollPane scroll = new ScrollPane(content);
+        scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
+        scroll.setStyle("-fx-background-color: " + AppStyles.SURFACE + "; -fx-background: " + AppStyles.SURFACE + ";");
+        setCenter(scroll);
 
         // ── Handler ───────────────────────────────────────────────────────
         resetBtn.setOnAction(e -> {
