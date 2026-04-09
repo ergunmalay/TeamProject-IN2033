@@ -20,7 +20,7 @@ public interface PaymentAPI {
      *         timestamp, card number) should be stored in a database table as
      *         specified in the Student's Brief (footnote 14).
      */
-    boolean processPayment(double amount, int cardNumber, String expiry);
+    boolean processPayment(double amount, long cardNumber, String expiry);
 
     /**
      * Refunds a previously completed payment.

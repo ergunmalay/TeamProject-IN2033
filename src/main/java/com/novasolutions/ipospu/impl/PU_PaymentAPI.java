@@ -31,7 +31,7 @@ public class PU_PaymentAPI implements PaymentAPI {
      * @return true if authorised, false if declined or service unavailable
      */
     @Override
-    public boolean processPayment(double amount, int cardNumber, String expiry) {
+    public boolean processPayment(double amount, long cardNumber, String expiry) {
         if (amount <= 0) return false;
         if (!isValidExpiry(expiry)) return false;
 
