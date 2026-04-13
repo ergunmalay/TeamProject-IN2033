@@ -15,10 +15,17 @@
 # 6. Run sql/ipos_pu_schema.sql to create tables
 # 7. Run sql/ipos_pu_seed_data.sql to populate test data
 
-db.url=jdbc:mysql://localhost:3306/ipos_pu
-db.user=ipospu_user
-db.password=your_password_here
+# PU database (your team's)
+pu.url=jdbc:mysql://localhost:3306/ipos_pu
+pu.username=ipospu_user
+pu.password=your_password_here
 
-# Cross-subsystem database access (shared DB approach)
-db.sa.url=jdbc:mysql://localhost:3306/ipos_sa
-db.ca.url=jdbc:mysql://localhost:3306/ipos_ca
+# CA database (commercial applications team — get credentials from CA team)
+ca.url=jdbc:mysql://localhost:3306/ipos_ca
+ca.username=iposca_user
+ca.password=ca_password_here
+
+# SA database (system administration team — get credentials from SA team)
+sa.url=jdbc:mysql://localhost:3306/ipos_sa
+sa.username=ipossa_user
+sa.password=sa_password_here

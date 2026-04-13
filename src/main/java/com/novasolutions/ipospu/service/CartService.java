@@ -11,6 +11,7 @@ public class CartService {
 
     private final CartDAO cartDAO               = new CartDAO();
     private final InventoryDBAdapter inventory  = new InventoryDBAdapter();
+    private final PromotionService promotionService = new PromotionService();
 
     public enum AddResult { SUCCESS, OUT_OF_STOCK, INSUFFICIENT_STOCK }
 
@@ -23,6 +24,7 @@ public class CartService {
             return available <= 0 ? AddResult.OUT_OF_STOCK : AddResult.INSUFFICIENT_STOCK;
         }
         cartDAO.addItem(member.id(), stockItemId, quantity);
+        promotionService.recordItemAdded(stockItemId, quantity);
         return AddResult.SUCCESS;
     }
 

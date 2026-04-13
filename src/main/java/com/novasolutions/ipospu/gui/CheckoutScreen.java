@@ -2,6 +2,7 @@ package com.novasolutions.ipospu.gui;
 
 import com.novasolutions.ipospu.model.CartItem;
 import com.novasolutions.ipospu.model.Member;
+import com.novasolutions.ipospu.controller.PromotionsController;
 import com.novasolutions.ipospu.service.CartService;
 import com.novasolutions.ipospu.service.OrderService;
 import javafx.geometry.Insets;
@@ -16,6 +17,7 @@ public class CheckoutScreen extends BorderPane {
 
     private final OrderService orderService = new OrderService();
     private final CartService  cartService  = new CartService();
+    private final PromotionsController promotionsController = new PromotionsController();
     private final Member member;
     private final Stage stage;
 
@@ -181,14 +183,24 @@ public class CheckoutScreen extends BorderPane {
 
         Separator sep = new Separator();
 
-        double discount = loyaltyApplies ? subtotal * 0.10 : 0;
+        // Keep the screen totals aligned with OrderService: promotion discount first, loyalty second.
+        double promotionDiscount = promotionsController.calculatePromotionDiscount(items);
+        double discount = promotionDiscount + (loyaltyApplies ? (subtotal - promotionDiscount) * 0.10 : 0);
+        double loyaltyDiscount = discount - promotionDiscount;
         double total = subtotal - discount;
 
         VBox totalsBox = new VBox(8);
+        if (promotionDiscount > 0) {
+            Label promotionLine = new Label(String.format("Promotion Discount:  -£%.2f", promotionDiscount));
+            promotionLine.setStyle("-fx-font-size: 13px; -fx-text-fill: " + AppStyles.SURFACE_TINT + ";");
+            totalsBox.getChildren().add(promotionLine);
+        }
         if (discount > 0) {
-            Label discountLine = new Label(String.format("Loyalty Discount (10%%):  -£%.2f", discount));
-            discountLine.setStyle("-fx-font-size: 13px; -fx-text-fill: " + AppStyles.SURFACE_TINT + ";");
-            totalsBox.getChildren().add(discountLine);
+            if (loyaltyDiscount > 0) {
+                Label discountLine = new Label(String.format("Loyalty Discount (10%%):  -£%.2f", loyaltyDiscount));
+                discountLine.setStyle("-fx-font-size: 13px; -fx-text-fill: " + AppStyles.SURFACE_TINT + ";");
+                totalsBox.getChildren().add(discountLine);
+            }
         }
         Label totalLine = new Label(String.format("Total:  £%.2f", total));
         totalLine.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: " + AppStyles.ON_SURFACE + ";");

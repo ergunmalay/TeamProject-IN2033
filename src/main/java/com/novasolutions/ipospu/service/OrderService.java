@@ -17,6 +17,7 @@ public class OrderService {
     private final InventoryDBAdapter  inventory  = new InventoryDBAdapter();
     private final PU_PaymentAPI       paymentAPI = new PU_PaymentAPI();
     private final PU_SMTP_API         smtpAPI    = new PU_SMTP_API();
+    private final PromotionService     promotionService = new PromotionService();
 
     private static final double LOYALTY_DISCOUNT = 0.10;
     private static final int    LOYALTY_EVERY_N  = 10;
@@ -57,13 +58,14 @@ public class OrderService {
             }
         }
 
-        // Calculate totals and apply loyalty discount
+        // Promotions are applied first, then the loyalty discount is calculated on the reduced subtotal.
         double subtotal = items.stream().mapToDouble(CartItem::getLineTotal).sum();
-        double discount = 0.0;
+        double promotionDiscount = promotionService.calculatePromotionDiscount(items);
+        double discount = promotionDiscount;
         int nextOrderCount = member.orderCount() + 1;
 
         if (member.memberType().equals("NON_COMMERCIAL") && nextOrderCount % LOYALTY_EVERY_N == 0) {
-            discount = subtotal * LOYALTY_DISCOUNT;
+            discount += (subtotal - promotionDiscount) * LOYALTY_DISCOUNT;
         }
 
         double total = subtotal - discount;
@@ -84,22 +86,25 @@ public class OrderService {
         }
 
         // Send confirmation email
-        String emailBody = buildConfirmationEmail(member, orderId, items, subtotal, discount, total, deliveryAddress);
+        String emailBody = buildConfirmationEmail(member, orderId, items, subtotal, promotionDiscount, discount, total, deliveryAddress);
         smtpAPI.sendEmail(member.email(), "Order Confirmation — #" + orderId, emailBody);
+
+        // Track promotional purchases for campaign reporting.
+        promotionService.recordItemsPurchased(items);
 
         // Clear cart and update order count
         cartDAO.clearCart(member.id());
         orderDAO.incrementOrderCount(member.id());
 
         String msg = discount > 0
-                ? String.format("Order placed! 10%% loyalty discount applied — you saved £%.2f.", discount)
+                ? String.format("Order placed! You saved £%.2f with available discounts.", discount)
                 : "Order placed successfully!";
 
         return new CheckoutOutcome(CheckoutResult.SUCCESS, msg, orderId, deliveryAddress);
     }
 
     private String buildConfirmationEmail(Member member, long orderId, List<CartItem> items,
-                                          double subtotal, double discount, double total,
+                                          double subtotal, double promotionDiscount, double discount, double total,
                                           String deliveryAddress) {
         StringBuilder sb = new StringBuilder();
         sb.append("Dear ").append(member.fullName()).append(",\n\n");
@@ -112,9 +117,12 @@ public class OrderService {
                     item.getProduct().getName(), item.getQuantity(), item.getLineTotal()));
         }
         sb.append("─────────────────────────────\n");
-        if (discount > 0) {
+        if (promotionDiscount > 0) {
+            sb.append(String.format("Promotion Discount:      -£%.2f%n", promotionDiscount));
+        }
+        if (discount > promotionDiscount) {
             sb.append(String.format("Subtotal:               £%.2f%n", subtotal));
-            sb.append(String.format("Loyalty Discount (10%%): -£%.2f%n", discount));
+            sb.append(String.format("Loyalty Discount (10%%): -£%.2f%n", discount - promotionDiscount));
         }
         sb.append(String.format("Total:                  £%.2f%n", total));
         sb.append("\nStatus: RECEIVED\n\n");
