@@ -95,15 +95,29 @@ public class MemberDAO {
     }
 
     public boolean deleteMemberByEmail(String email) {
-        String sql = "DELETE FROM members WHERE email = ?";
+        String deleteCartSql = "DELETE ci FROM cart_items ci JOIN members m ON m.id = ci.member_id WHERE m.email = ?";
+        String deleteApplicationsSql = "DELETE ca FROM commercial_applications ca JOIN members m ON m.id = ca.member_id WHERE m.email = ?";
+        String deleteMemberSql = "DELETE FROM members WHERE email = ?";
 
-        try (Connection connection = DatabaseConnection.getInstance().getPuConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConnection.getInstance().getPuConnection()) {
+            connection.setAutoCommit(false);
 
-            preparedStatement.setString(1, email);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(deleteCartSql)) {
+                preparedStatement.setString(1, email);
+                preparedStatement.executeUpdate();
+            }
 
-            int rowsAffected = preparedStatement.executeUpdate();
-            return rowsAffected > 0;
+            try (PreparedStatement preparedStatement = connection.prepareStatement(deleteApplicationsSql)) {
+                preparedStatement.setString(1, email);
+                preparedStatement.executeUpdate();
+            }
+
+            try (PreparedStatement preparedStatement = connection.prepareStatement(deleteMemberSql)) {
+                preparedStatement.setString(1, email);
+                int rowsAffected = preparedStatement.executeUpdate();
+                connection.commit();
+                return rowsAffected > 0;
+            }
 
         } catch (SQLException e) {
             System.err.println("[ERROR] Failed to delete member: " + email);

@@ -7,6 +7,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.*;
@@ -107,14 +108,16 @@ public class CartScreen extends BorderPane {
         Button minus = new Button("−");
         minus.setStyle(AppStyles.secondaryBtn() + "-fx-min-width: 32; -fx-min-height: 32; -fx-font-size: 16px;");
 
-        Label qtyLabel = new Label(String.valueOf(item.getQuantity()));
-        qtyLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-min-width: 32;");
-        qtyLabel.setAlignment(Pos.CENTER);
+        TextField qtyField = new TextField(String.valueOf(item.getQuantity()));
+        qtyField.setStyle(AppStyles.inputField() + "-fx-pref-width: 64; -fx-alignment: center;");
+        qtyField.setMaxWidth(64);
+        qtyField.setTextFormatter(new javafx.scene.control.TextFormatter<>(change ->
+                change.getControlNewText().matches("\\d*") ? change : null));
 
         Button plus = new Button("+");
         plus.setStyle(AppStyles.secondaryBtn() + "-fx-min-width: 32; -fx-min-height: 32; -fx-font-size: 16px;");
 
-        HBox qtyBox = new HBox(8, minus, qtyLabel, plus);
+        HBox qtyBox = new HBox(8, minus, qtyField, plus);
         qtyBox.setAlignment(Pos.CENTER);
 
         // Line total
@@ -143,6 +146,56 @@ public class CartScreen extends BorderPane {
         card.setStyle("-fx-background-color: " + AppStyles.SURFACE_LOWEST + "; -fx-background-radius: 12;");
         card.setEffect(AppStyles.subtleShadow());
 
+        Runnable applyDirectQuantity = () -> {
+            String raw = qtyField.getText().trim();
+            if (raw.isBlank()) {
+                qtyField.setText(String.valueOf(item.getQuantity()));
+                return;
+            }
+
+            int newQty;
+            try {
+                newQty = Integer.parseInt(raw);
+            } catch (NumberFormatException ex) {
+                qtyField.setText(String.valueOf(item.getQuantity()));
+                return;
+            }
+
+            if (newQty <= 0) {
+                new Thread(() -> {
+                    cartService.removeFromCart(item.getId());
+                    javafx.application.Platform.runLater(this::refresh);
+                }).start();
+                return;
+            }
+
+            if (newQty == item.getQuantity()) {
+                return;
+            }
+
+            new Thread(() -> {
+                boolean ok = cartService.updateQuantity(item.getId(), item.getProduct().getId(), newQty);
+                javafx.application.Platform.runLater(() -> {
+                    if (ok) {
+                        refresh();
+                    } else {
+                        qtyField.setText(String.valueOf(item.getQuantity()));
+                        stockWarning.setText("Max available stock reached");
+                        if (!card.getChildren().contains(stockWarning)) {
+                            card.getChildren().add(stockWarning);
+                        }
+                    }
+                });
+            }).start();
+        };
+
+        qtyField.setOnAction(e -> applyDirectQuantity.run());
+        qtyField.focusedProperty().addListener((obs, oldFocused, focused) -> {
+            if (!focused) {
+                applyDirectQuantity.run();
+            }
+        });
+
         // Button handlers (declared after all labels are initialised)
         minus.setOnAction(e -> {
             int newQty = item.getQuantity() - 1;
@@ -158,10 +211,7 @@ public class CartScreen extends BorderPane {
                     javafx.application.Platform.runLater(() -> {
                         minus.setDisable(false);
                         if (ok) {
-                            item.setQuantity(newQty);
-                            qtyLabel.setText(String.valueOf(newQty));
-                            lineTotal.setText(String.format("£%.2f", item.getLineTotal()));
-                            card.getChildren().remove(stockWarning);
+                            refresh();
                         }
                     });
                 }).start();
@@ -176,10 +226,7 @@ public class CartScreen extends BorderPane {
                 javafx.application.Platform.runLater(() -> {
                     plus.setDisable(false);
                     if (ok) {
-                        item.setQuantity(newQty);
-                        qtyLabel.setText(String.valueOf(newQty));
-                        lineTotal.setText(String.format("£%.2f", item.getLineTotal()));
-                        card.getChildren().remove(stockWarning);
+                        refresh();
                     } else {
                         stockWarning.setText("Max available stock reached");
                         if (!card.getChildren().contains(stockWarning)) {

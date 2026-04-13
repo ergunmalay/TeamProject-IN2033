@@ -1,6 +1,7 @@
 package com.novasolutions.ipospu.gui;
 
 import com.novasolutions.ipospu.model.Member;
+import com.novasolutions.ipospu.service.PromotionService;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Priority;
@@ -10,11 +11,12 @@ import javafx.stage.Stage;
 
 /**
  * Shared navy sidebar for authenticated screens.
- * Pass one of "dashboard", "catalogue", "orders", "profile" as activeItem.
+ * Pass one of "dashboard", "catalogue", "promotions", "admin", "orders", "profile" as activeItem.
  */
 public class SideBar extends VBox {
 
     public SideBar(Stage stage, Member member, String activeItem) {
+        PromotionService promotionService = new PromotionService();
 
         // ── Brand section ──────────────────────────────────────────────────
         Label title = new Label("Architectural Ledger");
@@ -28,6 +30,12 @@ public class SideBar extends VBox {
 
         // ── Nav items ─────────────────────────────────────────────────────
         VBox navCatalogue = navItem("View Catalogue", "catalogue".equals(activeItem));
+        VBox navPromotions = promotionService.hasActiveCampaigns()
+                ? navItem("Promotions", "promotions".equals(activeItem))
+                : null;
+        VBox navAdmin      = member != null && "ADMIN".equals(member.memberType())
+                ? navItem("Campaign Admin", "admin".equals(activeItem))
+                : null;
         VBox navCart      = navItem("My Cart",        "cart".equals(activeItem));
         VBox navOrders    = navItem("My Orders",      "orders".equals(activeItem));
         VBox navProfile   = navItem("My Profile",     "profile".equals(activeItem));
@@ -36,6 +44,20 @@ public class SideBar extends VBox {
             stage.getScene().setRoot(new CatalogueScreen(stage, member));
             stage.setTitle("IPOS-PU | Catalogue");
         });
+
+        if (navPromotions != null) {
+            navPromotions.setOnMouseClicked(e -> {
+                stage.getScene().setRoot(new PromotionsScreen(stage, member));
+                stage.setTitle("IPOS-PU | Promotions");
+            });
+        }
+
+        if (navAdmin != null) {
+            navAdmin.setOnMouseClicked(e -> {
+                stage.getScene().setRoot(new CampaignAdminScreen(stage, member));
+                stage.setTitle("IPOS-PU | Campaign Admin");
+            });
+        }
 
         navCart.setOnMouseClicked(e -> {
             stage.getScene().setRoot(new CartScreen(stage, member));
@@ -52,7 +74,11 @@ public class SideBar extends VBox {
             stage.setTitle("IPOS-PU | My Profile");
         });
 
-        VBox nav = new VBox(4, navCatalogue, navCart, navOrders, navProfile);
+        VBox nav = new VBox(4);
+        nav.getChildren().add(navCatalogue);
+        if (navPromotions != null) nav.getChildren().add(navPromotions);
+        if (navAdmin != null) nav.getChildren().add(navAdmin);
+        nav.getChildren().addAll(navCart, navOrders, navProfile);
 
         // ── Spacer ────────────────────────────────────────────────────────
         Region spacer = new Region();
@@ -64,7 +90,11 @@ public class SideBar extends VBox {
         nameLabel.setWrapText(true);
 
         String roleStr = member != null
-                ? ("COMMERCIAL".equals(member.memberType()) ? "Commercial Member" : "Non-Commercial Member")
+                ? switch (member.memberType()) {
+                    case "ADMIN" -> "System Administrator";
+                    case "COMMERCIAL" -> "Commercial Member";
+                    default -> "Non-Commercial Member";
+                }
                 : "";
         Label roleLabel = new Label(roleStr);
         roleLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: rgba(255,255,255,0.45);");
