@@ -79,6 +79,24 @@ INSERT INTO products (name, description, price, stock_quantity, active, created_
 ('Naproxen 250mg Tablets (12)',       'Anti-inflammatory pain relief for period pain and arthritis. 12 tablets.',                 4.79,   40, 1, NOW()),
 ('Lactulose Solution 300ml',          'Gentle laxative for constipation relief. 300ml bottle.',                                   3.59,   35, 1, NOW());
 
+-- ─── Commercial Applications ─────────────────────────────────────────────────
+-- For IPOS-SA testing: mix of PENDING, APPROVED, REJECTED statuses.
+-- member_id is NULL for all — set by IPOS-PU after approval creates a member account.
+
+INSERT INTO commercial_applications (companies_house_number, director_names, business_type, business_address, email, status, submitted_at, reviewed_at) VALUES
+
+-- 3 PENDING — main targets for IPOS-SA to approve/reject
+('12345678', 'James Hargreaves',              'Pharmacy',         '14 Mill Lane, Leeds, LS1 5DL',         'j.hargreaves@meridianpharm.co.uk',  'PENDING',  '2026-04-10 09:15:00', NULL),
+('87654321', 'Priya Nair, Ravi Nair',         'Wholesale',        '7 Commerce Park, Birmingham, B12 0QR', 'procurement@nairsupplies.co.uk',    'PENDING',  '2026-04-11 14:30:00', NULL),
+('11223344', 'Sophie Clarke',                 'Healthcare',       '3 Victoria Road, Manchester, M2 4BH',  'sclarke@clarkehealthcare.co.uk',    'PENDING',  '2026-04-12 08:45:00', NULL),
+
+-- 2 APPROVED — so IPOS-SA can see previously reviewed records
+('55667788', 'Thomas Reid',                   'Pharmacy',         '22 High Street, Edinburgh, EH1 1TB',   't.reid@reidpharmacy.co.uk',         'APPROVED', '2026-04-05 11:00:00', '2026-04-06 10:30:00'),
+('99001122', 'Fatima Al-Hassan, Omar Hassan', 'Medical Supplies',  '9 Parkway, Bristol, BS1 4ND',          'info@hassanmedical.co.uk',          'APPROVED', '2026-04-07 16:20:00', '2026-04-08 09:00:00'),
+
+-- 1 REJECTED — for completeness
+('33445566', 'David Kowalski',                'Retail',           '50 Broad Street, Norwich, NR1 1EZ',    'd.kowalski@kowalskigoods.co.uk',    'REJECTED', '2026-04-03 13:00:00', '2026-04-04 14:15:00');
+
 -- ─── Promotion Campaigns ─────────────────────────────────────────────────────
 
 INSERT INTO promotion_campaigns (name, start_date, end_date, discount_percent, status, created_at) VALUES
