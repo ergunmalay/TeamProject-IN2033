@@ -41,7 +41,7 @@ public class ProductDAO {
                 rs.getString("package_type"),
                 rs.getString("unit"),
                 rs.getInt("unit_per_pack"),
-                rs.getDouble("package_cost") * 2,
+                rs.getDouble("package_cost"),
                 rs.getInt("quantity_in_stock")
         );
     }

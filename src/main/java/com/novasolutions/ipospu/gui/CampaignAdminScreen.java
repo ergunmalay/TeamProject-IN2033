@@ -84,8 +84,11 @@ public class CampaignAdminScreen extends BorderPane {
         Button updateBtn = new Button("Update Selected");
         updateBtn.setStyle(AppStyles.secondaryBtn());
 
-        Button deactivateBtn = new Button("Deactivate Selected");
+        Button deactivateBtn = new Button("Terminate Early");
         deactivateBtn.setStyle("-fx-background-color: " + AppStyles.ERROR_CONT + "; -fx-text-fill: " + AppStyles.ON_ERROR_CONT + ";");
+
+        Button deleteBtn = new Button("Delete Campaign");
+        deleteBtn.setStyle("-fx-background-color: #7f0000; -fx-text-fill: white;");
 
         VBox form = new VBox(12,
                 fieldBlock("Campaign Name", nameField),
@@ -94,7 +97,7 @@ public class CampaignAdminScreen extends BorderPane {
                 fieldBlock("Discount %", discountField),
                 fieldBlock("Product IDs", productsField),
                 statusLabel,
-                new HBox(10, createBtn, updateBtn, deactivateBtn)
+                new HBox(10, createBtn, updateBtn, deactivateBtn, deleteBtn)
         );
         form.setPadding(new Insets(24));
         form.setStyle("-fx-background-color: " + AppStyles.SURFACE_LOWEST + "; -fx-background-radius: 12;");
@@ -167,13 +170,34 @@ public class CampaignAdminScreen extends BorderPane {
         deactivateBtn.setOnAction(e -> {
             if (selectedCampaign == null) {
                 statusLabel.setStyle(AppStyles.errorStyle());
-                statusLabel.setText("Select a campaign to deactivate.");
+                statusLabel.setText("Select a campaign to terminate.");
                 return;
             }
             try {
                 promotionsController.deactivateCampaign(selectedCampaign.id());
                 statusLabel.setStyle(AppStyles.successStyle());
-                statusLabel.setText("Campaign deactivated.");
+                statusLabel.setText("Campaign terminated early (status set to INACTIVE).");
+                refreshCampaigns(campaignsList);
+            } catch (Exception ex) {
+                statusLabel.setStyle(AppStyles.errorStyle());
+                statusLabel.setText(ex.getMessage());
+            }
+        });
+
+        deleteBtn.setOnAction(e -> {
+            if (selectedCampaign == null) {
+                statusLabel.setStyle(AppStyles.errorStyle());
+                statusLabel.setText("Select a campaign to delete.");
+                return;
+            }
+            try {
+                promotionsController.deleteCampaign(selectedCampaign.id());
+                statusLabel.setStyle(AppStyles.successStyle());
+                statusLabel.setText("Campaign deleted permanently.");
+                selectedCampaign = null;
+                nameField.clear();
+                discountField.clear();
+                productsField.clear();
                 refreshCampaigns(campaignsList);
             } catch (Exception ex) {
                 statusLabel.setStyle(AppStyles.errorStyle());

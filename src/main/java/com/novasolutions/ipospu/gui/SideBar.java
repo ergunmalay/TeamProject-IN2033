@@ -36,6 +36,12 @@ public class SideBar extends VBox {
         VBox navAdmin      = member != null && "ADMIN".equals(member.memberType())
                 ? navItem("Campaign Admin", "admin".equals(activeItem))
                 : null;
+        VBox navReports    = member != null && "ADMIN".equals(member.memberType())
+                ? navItem("Reports", "reports".equals(activeItem))
+                : null;
+        VBox navOrderAdmin = member != null && "ADMIN".equals(member.memberType())
+                ? navItem("Order Admin", "order-admin".equals(activeItem))
+                : null;
         VBox navCart      = navItem("My Cart",        "cart".equals(activeItem));
         VBox navOrders    = navItem("My Orders",      "orders".equals(activeItem));
         VBox navProfile   = navItem("My Profile",     "profile".equals(activeItem));
@@ -59,6 +65,20 @@ public class SideBar extends VBox {
             });
         }
 
+        if (navReports != null) {
+            navReports.setOnMouseClicked(e -> {
+                stage.getScene().setRoot(new ReportsScreen(stage, member));
+                stage.setTitle("IPOS-PU | Reports");
+            });
+        }
+
+        if (navOrderAdmin != null) {
+            navOrderAdmin.setOnMouseClicked(e -> {
+                stage.getScene().setRoot(new AdminOrdersScreen(stage, member));
+                stage.setTitle("IPOS-PU | Order Management");
+            });
+        }
+
         navCart.setOnMouseClicked(e -> {
             stage.getScene().setRoot(new CartScreen(stage, member));
             stage.setTitle("IPOS-PU | My Cart");
@@ -78,6 +98,8 @@ public class SideBar extends VBox {
         nav.getChildren().add(navCatalogue);
         if (navPromotions != null) nav.getChildren().add(navPromotions);
         if (navAdmin != null) nav.getChildren().add(navAdmin);
+        if (navReports != null) nav.getChildren().add(navReports);
+        if (navOrderAdmin != null) nav.getChildren().add(navOrderAdmin);
         nav.getChildren().addAll(navCart, navOrders, navProfile);
 
         // ── Spacer ────────────────────────────────────────────────────────
