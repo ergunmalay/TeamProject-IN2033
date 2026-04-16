@@ -60,6 +60,13 @@ public class PromotionService {
         return new PromotionActionResult(true, "Campaign updated successfully", campaignDAO.getCampaign(campaignId));
     }
 
+    public PromotionActionResult deleteCampaign(long campaignId) {
+        boolean deleted = campaignDAO.deleteCampaign(campaignId);
+        return deleted
+                ? new PromotionActionResult(true, "Campaign deleted", null)
+                : new PromotionActionResult(false, "Campaign not found", null);
+    }
+
     public PromotionActionResult deactivateCampaign(long campaignId) {
         boolean updated = campaignDAO.deactivateCampaign(campaignId);
         return updated

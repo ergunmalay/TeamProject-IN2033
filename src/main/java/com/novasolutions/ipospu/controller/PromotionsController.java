@@ -34,6 +34,13 @@ public class PromotionsController implements IPromotionsPortal {
         return result.campaign();
     }
 
+    public void deleteCampaign(long campaignId) {
+        PromotionService.PromotionActionResult result = promotionService.deleteCampaign(campaignId);
+        if (!result.success()) {
+            throw new IllegalArgumentException(result.message());
+        }
+    }
+
     @Override
     public PromotionCampaign deactivateCampaign(long campaignId) {
         PromotionService.PromotionActionResult result = promotionService.deactivateCampaign(campaignId);

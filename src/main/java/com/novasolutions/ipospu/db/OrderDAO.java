@@ -82,6 +82,88 @@ public class OrderDAO {
     }
 
     /**
+     * Updates the status of a single order.
+     */
+    public void updateOrderStatus(long orderId, String newStatus) {
+        String sql = "UPDATE ipos_pu.orders SET status = ? WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getInstance().getPuConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newStatus);
+            ps.setLong(2, orderId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update order status: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Returns all orders (admin view) with their line items, newest first.
+     */
+    public List<Order> getAllOrders() {
+        String orderSql = """
+                SELECT id, member_id, guest_email, guest_address, status,
+                       total_amount, discount_amount, created_at
+                FROM ipos_pu.orders
+                ORDER BY created_at DESC
+                """;
+
+        String itemSql = """
+                SELECT oi.id, oi.order_id, oi.product_id, oi.quantity, oi.unit_price, oi.line_total,
+                       csi.item_name
+                FROM ipos_pu.order_items oi
+                LEFT JOIN ipos_ca.ca_stock_items csi ON csi.stock_item_id = oi.product_id
+                WHERE oi.order_id = ?
+                """;
+
+        try (Connection conn = DatabaseConnection.getInstance().getPuConnection()) {
+            List<Order> orders = new ArrayList<>();
+
+            try (PreparedStatement ps = conn.prepareStatement(orderSql)) {
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    long orderId = rs.getLong("id");
+                    List<OrderItem> items = new ArrayList<>();
+
+                    try (PreparedStatement ips = conn.prepareStatement(itemSql)) {
+                        ips.setLong(1, orderId);
+                        ResultSet irs = ips.executeQuery();
+                        while (irs.next()) {
+                            items.add(new OrderItem(
+                                    irs.getLong("id"),
+                                    orderId,
+                                    irs.getInt("product_id"),
+                                    irs.getString("item_name"),
+                                    irs.getInt("quantity"),
+                                    irs.getDouble("unit_price"),
+                                    irs.getDouble("line_total")
+                            ));
+                        }
+                    }
+
+                    Long memberId = rs.getLong("member_id");
+                    if (rs.wasNull()) memberId = null;
+
+                    orders.add(new Order(
+                            orderId,
+                            memberId,
+                            rs.getString("guest_email"),
+                            rs.getString("guest_address"),
+                            rs.getString("status"),
+                            rs.getDouble("total_amount"),
+                            rs.getDouble("discount_amount"),
+                            rs.getObject("created_at", LocalDateTime.class),
+                            items
+                    ));
+                }
+            }
+            return orders;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to fetch all orders: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Returns all orders for a member with their line items.
      */
     public List<Order> getOrdersForMember(long memberId) {
