@@ -7,6 +7,7 @@ import com.novasolutions.ipospu.service.PromotionService;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public class PromotionsController implements IPromotionsPortal {
 
@@ -14,9 +15,9 @@ public class PromotionsController implements IPromotionsPortal {
 
     @Override
     public PromotionCampaign createCampaign(String name, LocalDate startDate, LocalDate endDate,
-                                            double discountPercent, List<Integer> productIds) {
+                                            Map<Integer, Double> productDiscounts) {
         PromotionService.PromotionActionResult result =
-                promotionService.createCampaign(name, startDate, endDate, discountPercent, productIds);
+                promotionService.createCampaign(name, startDate, endDate, productDiscounts);
         if (!result.success()) {
             throw new IllegalArgumentException(result.message());
         }
@@ -25,9 +26,9 @@ public class PromotionsController implements IPromotionsPortal {
 
     @Override
     public PromotionCampaign updateCampaign(long campaignId, String name, LocalDate startDate, LocalDate endDate,
-                                            double discountPercent, List<Integer> productIds) {
+                                            Map<Integer, Double> productDiscounts) {
         PromotionService.PromotionActionResult result =
-                promotionService.updateCampaign(campaignId, name, startDate, endDate, discountPercent, productIds);
+                promotionService.updateCampaign(campaignId, name, startDate, endDate, productDiscounts);
         if (!result.success()) {
             throw new IllegalArgumentException(result.message());
         }

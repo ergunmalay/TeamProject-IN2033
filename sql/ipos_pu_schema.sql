@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS commercial_applications (
     status                   ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
     submitted_at             DATETIME(6)     NOT NULL,
     reviewed_at              DATETIME(6)     NULL,
-    FOREIGN KEY (member_id) REFERENCES members(id)
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
 );
 
 -- ─── UC-04, UC-05, UC-06 ─────────────────────────────────────────────────────
@@ -72,8 +72,8 @@ CREATE TABLE IF NOT EXISTS cart_items (
     product_id  BIGINT          NOT NULL,
     quantity    INT             NOT NULL,
     added_at    DATETIME(6)     NOT NULL,
-    FOREIGN KEY (member_id)  REFERENCES members(id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
+    FOREIGN KEY (member_id)  REFERENCES members(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 -- ─── UC-08, UC-09, UC-10 ─────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS orders (
     discount_amount  DECIMAL(10,2)   NOT NULL DEFAULT 0.00,
     notes            VARCHAR(1000)   NULL,
     created_at       DATETIME(6)     NOT NULL,
-    FOREIGN KEY (member_id) REFERENCES members(id)
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS order_items (
@@ -98,8 +98,8 @@ CREATE TABLE IF NOT EXISTS order_items (
     quantity    INT             NOT NULL,
     unit_price  DECIMAL(10,2)   NOT NULL,
     line_total  DECIMAL(10,2)   NOT NULL,
-    FOREIGN KEY (order_id)   REFERENCES orders(id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
+    FOREIGN KEY (order_id)   REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 -- ─── UC-12 ───────────────────────────────────────────────────────────────────
@@ -163,19 +163,6 @@ CREATE TABLE IF NOT EXISTS campaign_products (
     product_id   BIGINT          NOT NULL,
     discount_percent DECIMAL(5,2) NOT NULL,
     UNIQUE KEY unique_campaign_product (campaign_id, product_id),  -- prevents overlap conflict
-    FOREIGN KEY (campaign_id) REFERENCES promotion_campaigns(id),
-    FOREIGN KEY (product_id)  REFERENCES products(id)
-);
-
--- ─── UC-15, UC-16, UC-19 ─────────────────────────────────────────────────────
-
-CREATE TABLE IF NOT EXISTS campaign_tracking (
-    id                    BIGINT  AUTO_INCREMENT PRIMARY KEY,
-    campaign_id           BIGINT  NOT NULL,
-    product_id            BIGINT  NULL,   -- NULL = campaign-level click counter
-    click_count           INT     NOT NULL DEFAULT 0,
-    items_added_count     INT     NOT NULL DEFAULT 0,
-    items_purchased_count INT     NOT NULL DEFAULT 0,
-    FOREIGN KEY (campaign_id) REFERENCES promotion_campaigns(id),
-    FOREIGN KEY (product_id)  REFERENCES products(id)
+    FOREIGN KEY (campaign_id) REFERENCES promotion_campaigns(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id)  REFERENCES products(id) ON DELETE CASCADE
 );

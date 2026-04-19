@@ -1,9 +1,13 @@
 package com.novasolutions.ipospu.gui;
 
+import com.novasolutions.ipospu.db.MemberDAO;
 import com.novasolutions.ipospu.db.OrderDAO;
+import com.novasolutions.ipospu.db.PaymentDAO;
+import com.novasolutions.ipospu.impl.PU_SMTP_API;
 import com.novasolutions.ipospu.model.Member;
 import com.novasolutions.ipospu.model.Order;
 import com.novasolutions.ipospu.model.OrderItem;
+import com.novasolutions.ipospu.model.PaymentRecord;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -21,6 +25,9 @@ public class AdminOrdersScreen extends BorderPane {
             List.of("RECEIVED", "PROCESSING", "SHIPPED", "DELIVERED");
 
     private final OrderDAO orderDAO = new OrderDAO();
+    private final PaymentDAO paymentDAO = new PaymentDAO();
+    private final MemberDAO memberDAO = new MemberDAO();
+    private final PU_SMTP_API smtpAPI = new PU_SMTP_API();
     private Order selectedOrder = null;
 
     public AdminOrdersScreen(Stage stage, Member member) {
@@ -57,6 +64,29 @@ public class AdminOrdersScreen extends BorderPane {
                         o.getCreatedAt().format(DT_FMT),
                         o.getTotalAmount(),
                         o.getStatus()));
+            }
+        });
+
+        ListView<PaymentRecord> paymentsList = new ListView<>();
+        paymentsList.setPrefHeight(280);
+        paymentsList.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(PaymentRecord payment, boolean empty) {
+                super.updateItem(payment, empty);
+                if (empty || payment == null) {
+                    setText(null);
+                    return;
+                }
+                String orderRef = payment.orderId() != null ? "#" + payment.orderId() : "No order linked";
+                String customer = payment.customerEmail() != null ? payment.customerEmail() : "Unknown customer";
+                setText(String.format(
+                        "Payment #%d  |  %s  |  £%.2f  |  %s  |  %s",
+                        payment.id(),
+                        orderRef,
+                        payment.amount(),
+                        payment.status(),
+                        customer
+                ));
             }
         });
 
@@ -137,10 +167,12 @@ public class AdminOrdersScreen extends BorderPane {
             String newStatus = STATUS_FLOW.get(idx + 1);
             // Capture ID before background thread (selection change clears selectedOrder)
             long orderId = selectedOrder.getId();
+            Order orderToUpdate = selectedOrder;
             advanceBtn.setDisable(true);
 
             new Thread(() -> {
                 orderDAO.updateOrderStatus(orderId, newStatus);
+                sendOrderStatusUpdateEmail(orderToUpdate, newStatus);
                 List<Order> refreshed = orderDAO.getAllOrders();
                 Platform.runLater(() -> {
                     orderList.getItems().setAll(refreshed);
@@ -166,6 +198,15 @@ public class AdminOrdersScreen extends BorderPane {
         refreshBtn.setOnAction(e -> loadOrders.run());
         loadOrders.run();  // initial load
 
+        Runnable loadPayments = () -> {
+            new Thread(() -> {
+                List<PaymentRecord> payments = paymentDAO.getAllPayments();
+                Platform.runLater(() -> paymentsList.getItems().setAll(payments));
+            }).start();
+        };
+
+        loadPayments.run();
+
         // ── Layout ───────────────────────────────────────────────────────────
         VBox listCard = new VBox(12, new Label("All Orders"), orderList);
         listCard.setPadding(new Insets(20));
@@ -175,9 +216,23 @@ public class AdminOrdersScreen extends BorderPane {
         ((Label) listCard.getChildren().get(0)).setStyle(
                 "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: " + AppStyles.ON_SURFACE + ";");
 
+        Label paymentsTitle = new Label("Payments");
+        paymentsTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: " + AppStyles.ON_SURFACE + ";");
+
+        Label paymentsHint = new Label("Payment table with linked order and customer information.");
+        paymentsHint.setStyle(AppStyles.bodyMuted());
+        paymentsHint.setWrapText(true);
+
+        VBox paymentsCard = new VBox(12, paymentsTitle, paymentsHint, paymentsList);
+        paymentsCard.setPadding(new Insets(20));
+        paymentsCard.setStyle("-fx-background-color: " + AppStyles.SURFACE_LOWEST +
+                              "; -fx-background-radius: 12;");
+        paymentsCard.setEffect(AppStyles.subtleShadow());
+
         VBox page = new VBox(24,
                 new VBox(6, pageTitle, pageSub),
                 listCard,
+                paymentsCard,
                 detailCard);
         page.setPadding(new Insets(32));
         page.setStyle("-fx-background-color: " + AppStyles.SURFACE + ";");
@@ -187,5 +242,46 @@ public class AdminOrdersScreen extends BorderPane {
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scroll.setStyle("-fx-background-color: " + AppStyles.SURFACE + "; -fx-background: " + AppStyles.SURFACE + ";");
         return scroll;
+    }
+
+    private void sendOrderStatusUpdateEmail(Order order, String newStatus) {
+        if (order == null) {
+            return;
+        }
+
+        String recipient = order.getGuestEmail();
+        String customerName = "Customer";
+
+        if ((recipient == null || recipient.isBlank()) && order.getMemberId() != null) {
+            Member member = memberDAO.findById(order.getMemberId());
+            if (member != null) {
+                recipient = member.email();
+                customerName = member.fullName();
+            }
+        }
+
+        if (recipient == null || recipient.isBlank()) {
+            return;
+        }
+
+        String body = """
+                Hello %s,
+
+                Your order #%d has been updated.
+
+                New status: %s
+                Delivery address: %s
+
+                You can log in to IPOS-PU and open "My Orders" to view the latest update.
+
+                IPOS-PU
+                """.formatted(
+                customerName,
+                order.getId(),
+                newStatus,
+                order.getGuestAddress() != null ? order.getGuestAddress() : "Not provided"
+        );
+
+        smtpAPI.sendEmail(recipient, "Order Update — #" + order.getId(), body);
     }
 }

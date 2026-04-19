@@ -43,7 +43,7 @@ public class OrderConfirmationScreen extends BorderPane {
         deliveryNote.setMaxWidth(460);
         deliveryNote.setAlignment(Pos.CENTER);
 
-        Label emailNote = new Label("A confirmation email has been sent to " + member.email());
+        Label emailNote = new Label("A confirmation email has been sent to " + outcome.contactEmail());
         emailNote.setStyle("-fx-font-size: 13px; -fx-text-fill: " + AppStyles.ON_SURFACE_VAR + ";" +
                            "-fx-background-color: " + AppStyles.SURFACE_CONTAINER + ";" +
                            "-fx-background-radius: 8; -fx-padding: 14 20;");
@@ -65,15 +65,17 @@ public class OrderConfirmationScreen extends BorderPane {
             stage.setTitle("IPOS-PU | Catalogue");
         });
 
-        Button viewOrdersBtn = new Button("View My Orders");
-        viewOrdersBtn.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 12 28; -fx-font-size: 14px;");
-        viewOrdersBtn.setMinWidth(200);
-        viewOrdersBtn.setOnAction(e -> {
-            stage.getScene().setRoot(new OrderHistoryScreen(stage, member));
-            stage.setTitle("IPOS-PU | My Orders");
-        });
-
-        HBox actions = new HBox(16, continueBtn, viewOrdersBtn);
+        HBox actions = new HBox(16, continueBtn);
+        if (!member.isGuest()) {
+            Button viewOrdersBtn = new Button("View My Orders");
+            viewOrdersBtn.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 12 28; -fx-font-size: 14px;");
+            viewOrdersBtn.setMinWidth(200);
+            viewOrdersBtn.setOnAction(e -> {
+                stage.getScene().setRoot(new OrderHistoryScreen(stage, member));
+                stage.setTitle("IPOS-PU | My Orders");
+            });
+            actions.getChildren().add(viewOrdersBtn);
+        }
         actions.setAlignment(Pos.CENTER);
 
         // ── Card ─────────────────────────────────────────────────────────────

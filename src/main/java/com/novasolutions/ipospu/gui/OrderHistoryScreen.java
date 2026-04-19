@@ -44,7 +44,15 @@ public class OrderHistoryScreen extends BorderPane {
         Label pageSub = new Label(orders.size() + " order" + (orders.size() == 1 ? "" : "s") + " placed");
         pageSub.setStyle(AppStyles.bodyMuted());
 
-        VBox header = new VBox(8, pageTitle, pageSub);
+        Button refreshBtn = new Button("Refresh");
+        refreshBtn.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 8 20;");
+        refreshBtn.setOnAction(e -> loadOrders());
+
+        HBox titleRow = new HBox(16, pageTitle, refreshBtn);
+        titleRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(pageTitle, Priority.ALWAYS);
+
+        VBox header = new VBox(8, titleRow, pageSub);
 
         VBox orderList;
         if (orders.isEmpty()) {

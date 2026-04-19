@@ -14,6 +14,26 @@ public record Member(
         String companyName,    // I include this for commercial members; may be null for non-commercial
         int orderCount,        // I track how many orders this member has placed; defaults to 0 in DB
         boolean isFirstLogin,  // I use this flag to prompt a password change on first login
+        String guestSessionId, // I use this only for guest browsing/cart sessions
         LocalDateTime createdAt // I capture when the account was created
 ) {
+    public static Member guest() {
+        return new Member(
+                -1L,
+                "Guest User",
+                "guest@ipos-pu.local",
+                "",
+                "GUEST",
+                "GUEST",
+                null,
+                0,
+                false,
+                java.util.UUID.randomUUID().toString(),
+                LocalDateTime.now()
+        );
+    }
+
+    public boolean isGuest() {
+        return "GUEST".equalsIgnoreCase(memberType);
+    }
 }

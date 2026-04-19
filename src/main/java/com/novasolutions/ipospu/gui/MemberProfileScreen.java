@@ -25,7 +25,9 @@ public class MemberProfileScreen extends BorderPane {
         Label pageTitle = new Label("My Profile");
         pageTitle.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: " + AppStyles.ON_SURFACE + ";");
 
-        Label pageSub = new Label("Your membership details and account information.");
+        Label pageSub = new Label(member.isGuest()
+                ? "Guest sessions are temporary and support cart and checkout during this app session."
+                : "Your membership details and account information.");
         pageSub.setStyle(AppStyles.bodyMuted());
 
         VBox pageHeader = new VBox(6, pageTitle, pageSub);
@@ -66,21 +68,28 @@ public class MemberProfileScreen extends BorderPane {
         statusRow.setPadding(new Insets(0, 0, 4, 0));
 
         // ── Actions card ──────────────────────────────────────────────────
-        Label actionsLabel = new Label("Account Actions");
+        Label actionsLabel = new Label(member.isGuest() ? "Next Step" : "Account Actions");
         actionsLabel.setStyle(AppStyles.sectionTitle());
 
-        Button changePassBtn = new Button("Change Password");
+        Button changePassBtn = new Button(member.isGuest() ? "Create an Account" : "Change Password");
         changePassBtn.setStyle(AppStyles.ghostGradBtn() + "-fx-padding: 11 24;");
         changePassBtn.setOnMouseEntered(e -> changePassBtn.setStyle(
                 AppStyles.ghostGradBtn() + "-fx-padding: 11 24; -fx-opacity: 0.9;"));
         changePassBtn.setOnMouseExited(e -> changePassBtn.setStyle(
                 AppStyles.ghostGradBtn() + "-fx-padding: 11 24;"));
         changePassBtn.setOnAction(e -> {
-            stage.getScene().setRoot(new ChangePasswordScreen(stage, member));
-            stage.setTitle("IPOS-PU | Update Password");
+            if (member.isGuest()) {
+                stage.getScene().setRoot(new RegistrationChoiceScreen(stage));
+                stage.setTitle("IPOS-PU | Registration");
+            } else {
+                stage.getScene().setRoot(new ChangePasswordScreen(stage, member));
+                stage.setTitle("IPOS-PU | Update Password");
+            }
         });
 
-        Label changePassDesc = new Label("Update your login credentials. You will be redirected to the password reset screen.");
+        Label changePassDesc = new Label(member.isGuest()
+                ? "Register or sign in with a member account if you want saved order history, account management, and loyalty rewards."
+                : "Update your login credentials. You will be redirected to the password reset screen.");
         changePassDesc.setStyle(AppStyles.bodyMuted());
         changePassDesc.setWrapText(true);
 
@@ -129,6 +138,7 @@ public class MemberProfileScreen extends BorderPane {
             case "APPROVED"  -> { bg = "#d4edda"; fg = AppStyles.SURFACE_TINT; }
             case "PENDING"   -> { bg = AppStyles.TERT_FIXED; fg = AppStyles.ON_TERT_VAR; }
             case "REJECTED"  -> { bg = AppStyles.ERROR_CONT; fg = AppStyles.ON_ERROR_CONT; }
+            case "GUEST"     -> { bg = AppStyles.SURFACE_CONTAINER; fg = AppStyles.ON_SURFACE_VAR; }
             default          -> { bg = AppStyles.SURFACE_HIGH; fg = AppStyles.ON_SURFACE_VAR; }
         }
         Label badge = new Label(status);
@@ -140,6 +150,10 @@ public class MemberProfileScreen extends BorderPane {
     }
 
     private String formatMemberType(String type) {
-        return "COMMERCIAL".equals(type) ? "Commercial" : "Non-Commercial";
+        return switch (type) {
+            case "COMMERCIAL" -> "Commercial";
+            case "GUEST" -> "Guest";
+            default -> "Non-Commercial";
+        };
     }
 }

@@ -4,14 +4,15 @@ import com.novasolutions.ipospu.model.PromotionCampaign;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public interface IPromotionsPortal {
 
     PromotionCampaign createCampaign(String name, LocalDate startDate, LocalDate endDate,
-                                     double discountPercent, List<Integer> productIds);
+                                     Map<Integer, Double> productDiscounts);
 
     PromotionCampaign updateCampaign(long campaignId, String name, LocalDate startDate, LocalDate endDate,
-                                     double discountPercent, List<Integer> productIds);
+                                     Map<Integer, Double> productDiscounts);
 
     PromotionCampaign deactivateCampaign(long campaignId);
 

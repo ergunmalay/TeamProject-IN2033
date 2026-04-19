@@ -8,13 +8,18 @@ import com.novasolutions.ipospu.model.report.CampaignReportRow;
 import com.novasolutions.ipospu.model.report.SalesReportRow;
 import com.novasolutions.ipospu.service.PromotionService;
 import com.novasolutions.ipospu.service.ReportService;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.print.PrinterJob;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.stage.FileChooser;
 
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -87,7 +92,11 @@ public class ReportsScreen extends BorderPane {
         printBtn.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 8 20;");
         printBtn.setDisable(true);
 
-        HBox controls = new HBox(12, fromLbl, fromPicker, toLbl, toPicker, generateBtn, printBtn);
+        Button downloadBtn = new Button("Download");
+        downloadBtn.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 8 20;");
+        downloadBtn.setDisable(true);
+
+        HBox controls = new HBox(12, fromLbl, fromPicker, toLbl, toPicker, generateBtn, printBtn, downloadBtn);
         controls.setAlignment(Pos.CENTER_LEFT);
 
         VBox resultsBox = new VBox(0);
@@ -98,10 +107,12 @@ public class ReportsScreen extends BorderPane {
             if (from == null || to == null || from.isAfter(to)) {
                 resultsBox.getChildren().setAll(errorLabel("Please select a valid date range."));
                 printBtn.setDisable(true);
+                downloadBtn.setDisable(true);
                 return;
             }
             generateBtn.setDisable(true);
             printBtn.setDisable(true);
+            downloadBtn.setDisable(true);
             new Thread(() -> {
                 List<SalesReportRow> rows = reportService.getSalesReport(from, to);
                 javafx.application.Platform.runLater(() -> {
@@ -109,7 +120,9 @@ public class ReportsScreen extends BorderPane {
                     VBox table = buildSalesTable(rows, from, to);
                     resultsBox.getChildren().setAll(table);
                     printBtn.setDisable(rows.isEmpty());
+                    downloadBtn.setDisable(rows.isEmpty());
                     printBtn.setOnAction(pe -> printNode(table, "IPOS-PU Sales Report"));
+                    downloadBtn.setOnAction(de -> downloadNode(table, "ipos-pu-sales-report"));
                 });
             }).start();
         });
@@ -192,7 +205,11 @@ public class ReportsScreen extends BorderPane {
         printBtn.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 8 20;");
         printBtn.setDisable(true);
 
-        HBox controls = new HBox(12, fromLbl, fromPicker, toLbl, toPicker, generateBtn, printBtn);
+        Button downloadBtn = new Button("Download");
+        downloadBtn.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 8 20;");
+        downloadBtn.setDisable(true);
+
+        HBox controls = new HBox(12, fromLbl, fromPicker, toLbl, toPicker, generateBtn, printBtn, downloadBtn);
         controls.setAlignment(Pos.CENTER_LEFT);
 
         VBox resultsBox = new VBox(0);
@@ -203,10 +220,12 @@ public class ReportsScreen extends BorderPane {
             if (from == null || to == null || from.isAfter(to)) {
                 resultsBox.getChildren().setAll(errorLabel("Please select a valid date range."));
                 printBtn.setDisable(true);
+                downloadBtn.setDisable(true);
                 return;
             }
             generateBtn.setDisable(true);
             printBtn.setDisable(true);
+            downloadBtn.setDisable(true);
             new Thread(() -> {
                 List<CampaignReportRow> campaigns = reportService.getCampaignReport(from, to);
                 javafx.application.Platform.runLater(() -> {
@@ -214,7 +233,9 @@ public class ReportsScreen extends BorderPane {
                     VBox table = buildCampaignTable(campaigns, from, to);
                     resultsBox.getChildren().setAll(table);
                     printBtn.setDisable(campaigns.isEmpty());
+                    downloadBtn.setDisable(campaigns.isEmpty());
                     printBtn.setOnAction(pe -> printNode(table, "IPOS-PU Advertising Campaigns Report"));
+                    downloadBtn.setOnAction(de -> downloadNode(table, "ipos-pu-advertising-campaigns-report"));
                 });
             }).start();
         });
@@ -311,7 +332,11 @@ public class ReportsScreen extends BorderPane {
         printBtn.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 8 20;");
         printBtn.setDisable(true);
 
-        HBox controls = new HBox(12, new Label("Campaign:"), campaignPicker, generateBtn, printBtn);
+        Button downloadBtn = new Button("Download");
+        downloadBtn.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 8 20;");
+        downloadBtn.setDisable(true);
+
+        HBox controls = new HBox(12, new Label("Campaign:"), campaignPicker, generateBtn, printBtn, downloadBtn);
         controls.setAlignment(Pos.CENTER_LEFT);
         ((Label) controls.getChildren().get(0)).setStyle(AppStyles.bodyMuted());
 
@@ -322,10 +347,12 @@ public class ReportsScreen extends BorderPane {
             if (selected == null) {
                 resultsBox.getChildren().setAll(errorLabel("Please select a campaign."));
                 printBtn.setDisable(true);
+                downloadBtn.setDisable(true);
                 return;
             }
             generateBtn.setDisable(true);
             printBtn.setDisable(true);
+            downloadBtn.setDisable(true);
             new Thread(() -> {
                 List<CampaignEngagementRow> rows = reportService.getCampaignEngagement(selected.id());
                 javafx.application.Platform.runLater(() -> {
@@ -333,7 +360,9 @@ public class ReportsScreen extends BorderPane {
                     VBox table = buildEngagementTable(rows, selected);
                     resultsBox.getChildren().setAll(table);
                     printBtn.setDisable(rows.isEmpty());
+                    downloadBtn.setDisable(rows.isEmpty());
                     printBtn.setOnAction(pe -> printNode(table, "IPOS-PU Customer Engagement Report"));
+                    downloadBtn.setOnAction(de -> downloadNode(table, "ipos-pu-customer-engagement-report"));
                 });
             }).start();
         });
@@ -456,6 +485,33 @@ public class ReportsScreen extends BorderPane {
         if (proceed) {
             boolean printed = job.printPage(printable);
             if (printed) job.endJob();
+        }
+    }
+
+    private void downloadNode(javafx.scene.Node node, String defaultFileName) {
+        javafx.scene.image.WritableImage snapshot = node.snapshot(
+                new javafx.scene.SnapshotParameters(), null);
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Download Report");
+        chooser.setInitialFileName(defaultFileName + ".png");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("PNG Image", "*.png"));
+
+        File target = chooser.showSaveDialog(stage);
+        if (target == null) {
+            return;
+        }
+
+        try {
+            ImageIO.write(SwingFXUtils.fromFXImage(snapshot, null), "png", target);
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Download");
+            alert.setHeaderText("Could not save report");
+            alert.setContentText("Failed to save the report image.\n" + e.getMessage());
+            alert.initOwner(stage);
+            alert.showAndWait();
         }
     }
 

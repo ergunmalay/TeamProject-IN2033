@@ -35,6 +35,10 @@ public class LoginScreen extends StackPane {
         VBox logoBlock = new VBox(6, logoText, logoSub);
         logoBlock.setAlignment(Pos.CENTER);
 
+        Button backLink = new Button("← Back");
+        backLink.setStyle("-fx-background-color: transparent; -fx-text-fill: " + AppStyles.ON_SURFACE_VAR + ";" +
+                          "-fx-font-size: 13px; -fx-cursor: hand; -fx-border-color: transparent; -fx-padding: 0;");
+
         // ── Error banner ──────────────────────────────────────────────────
         Label errorLabel = new Label();
         errorLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: " + AppStyles.ON_ERROR_CONT + ";" +
@@ -74,6 +78,10 @@ public class LoginScreen extends StackPane {
         loginButton.setOnMouseExited(e -> loginButton.setStyle(
                 AppStyles.ghostGradBtn() + "-fx-padding: 13 0;"));
 
+        Button guestButton = new Button("Continue as Guest");
+        guestButton.setMaxWidth(Double.MAX_VALUE);
+        guestButton.setStyle(AppStyles.secondaryBtn() + "-fx-padding: 13 0;");
+
         // ── Register link ─────────────────────────────────────────────────
         Label registerPrompt = new Label("Don't have an account?");
         registerPrompt.setStyle(AppStyles.bodyMuted());
@@ -98,6 +106,7 @@ public class LoginScreen extends StackPane {
                 emailGroup,
                 passGroup,
                 loginButton,
+                guestButton,
                 registerRow,
                 resetBtn
         );
@@ -106,7 +115,7 @@ public class LoginScreen extends StackPane {
         card.setEffect(AppStyles.cardShadow());
 
         // ── Page container ────────────────────────────────────────────────
-        VBox container = new VBox(40, logoBlock, card);
+        VBox container = new VBox(20, backLink, logoBlock, card);
         container.setAlignment(Pos.TOP_CENTER);
         container.setMaxWidth(420);
 
@@ -131,7 +140,15 @@ public class LoginScreen extends StackPane {
         passwordField.setOnAction(e -> handleLogin(
                 emailField.getText(), passwordField.getText(), errorLabel));
 
+        guestButton.setOnAction(e -> handleGuestLogin(errorLabel));
+
         registerLink.setOnAction(e -> {
+            Stage stage = (Stage) getScene().getWindow();
+            stage.getScene().setRoot(new RegistrationChoiceScreen(stage));
+            stage.setTitle("IPOS-PU | Registration");
+        });
+
+        backLink.setOnAction(e -> {
             Stage stage = (Stage) getScene().getWindow();
             stage.getScene().setRoot(new RegistrationChoiceScreen(stage));
             stage.setTitle("IPOS-PU | Registration");
@@ -153,7 +170,7 @@ public class LoginScreen extends StackPane {
         Label heading = new Label("Login");
         heading.setStyle(AppStyles.sectionTitle());
 
-        Label sub = new Label("Please enter your credentials to continue.");
+        Label sub = new Label("Please enter your credentials to continue, or browse the catalogue as a guest.");
         sub.setStyle(AppStyles.bodyMuted());
         sub.setWrapText(true);
 
@@ -162,7 +179,15 @@ public class LoginScreen extends StackPane {
 
     private void handleLogin(String email, String password, Label errorLabel) {
         LoginResult result = loginController.login(email, password);
+        finishLogin(result, errorLabel);
+    }
 
+    private void handleGuestLogin(Label errorLabel) {
+        LoginResult result = loginController.loginAsGuest();
+        finishLogin(result, errorLabel);
+    }
+
+    private void finishLogin(LoginResult result, Label errorLabel) {
         if (result.isSuccess()) {
             Stage stage = (Stage) getScene().getWindow();
             Member member = result.getMember();
@@ -173,7 +198,7 @@ public class LoginScreen extends StackPane {
             stage.setHeight(920);
             stage.centerOnScreen();
 
-            if (member.isFirstLogin()) {
+            if (!member.isGuest() && member.isFirstLogin()) {
                 stage.getScene().setRoot(new ChangePasswordScreen(stage, member));
                 stage.setTitle("IPOS-PU | Update Password");
             } else {

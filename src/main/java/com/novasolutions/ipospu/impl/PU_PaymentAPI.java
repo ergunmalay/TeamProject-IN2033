@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -32,8 +33,12 @@ public class PU_PaymentAPI implements PaymentAPI {
      */
     @Override
     public boolean processPayment(double amount, long cardNumber, String expiry) {
-        if (amount <= 0) return false;
-        if (!isValidExpiry(expiry)) return false;
+        return processPaymentAndReturnId(amount, cardNumber, expiry) != null;
+    }
+
+    public Long processPaymentAndReturnId(double amount, long cardNumber, String expiry) {
+        if (amount <= 0) return null;
+        if (!isValidExpiry(expiry)) return null;
 
         String masked = maskCard(String.valueOf(cardNumber));
         String sql = """
@@ -42,7 +47,7 @@ public class PU_PaymentAPI implements PaymentAPI {
                 """;
 
         try (Connection conn = DatabaseConnection.getInstance().getPuConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             String transactionId = "TXN-" + System.currentTimeMillis();
             ps.setDouble(1, amount);
@@ -51,11 +56,29 @@ public class PU_PaymentAPI implements PaymentAPI {
             ps.setString(4, transactionId);
             ps.setObject(5, LocalDateTime.now());
             ps.executeUpdate();
-            return true;
+
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    return keys.getLong(1);
+                }
+            }
+            return null;
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            return null;
+        }
+    }
+
+    public void linkPaymentToOrder(long paymentId, long orderId) {
+        String sql = "UPDATE payments SET order_id = ? WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getInstance().getPuConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, orderId);
+            ps.setLong(2, paymentId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to link payment to order: " + e.getMessage(), e);
         }
     }
 

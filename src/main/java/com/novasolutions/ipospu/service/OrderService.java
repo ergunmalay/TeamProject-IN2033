@@ -29,7 +29,8 @@ public class OrderService {
         PAYMENT_FAILED
     }
 
-    public record CheckoutOutcome(CheckoutResult result, String message, long orderId, String deliveryAddress) {}
+    public record CheckoutOutcome(CheckoutResult result, String message, long orderId, String deliveryAddress,
+                                  String contactEmail) {}
 
     /**
      * Executes the full checkout flow for a logged-in member:
@@ -44,17 +45,23 @@ public class OrderService {
      * 9. Increment member order count
      */
     public CheckoutOutcome checkout(Member member, long cardNumber, String expiry, String deliveryAddress) {
-        List<CartItem> items = cartDAO.getCartItems(member.id());
+        return checkout(member, cardNumber, expiry, deliveryAddress, null);
+    }
+
+    public CheckoutOutcome checkout(Member member, long cardNumber, String expiry, String deliveryAddress, String guestEmail) {
+        List<CartItem> items = member.isGuest()
+                ? cartDAO.getCartItemsBySession(member.guestSessionId())
+                : cartDAO.getCartItems(member.id());
 
         if (items.isEmpty()) {
-            return new CheckoutOutcome(CheckoutResult.CART_EMPTY, "Your cart is empty.", -1, deliveryAddress);
+            return new CheckoutOutcome(CheckoutResult.CART_EMPTY, "Your cart is empty.", -1, deliveryAddress, guestEmail);
         }
 
         // Validate stock for all items
         for (CartItem item : items) {
             if (!inventory.checkStock(item.getProduct().getId(), item.getQuantity())) {
                 return new CheckoutOutcome(CheckoutResult.STOCK_UNAVAILABLE,
-                        "'" + item.getProduct().getName() + "' no longer has sufficient stock.", -1, deliveryAddress);
+                        "'" + item.getProduct().getName() + "' no longer has sufficient stock.", -1, deliveryAddress, guestEmail);
             }
         }
 
@@ -64,21 +71,31 @@ public class OrderService {
         double discount = promotionDiscount;
         int nextOrderCount = member.orderCount() + 1;
 
-        if (member.memberType().equals("NON_COMMERCIAL") && nextOrderCount % LOYALTY_EVERY_N == 0) {
+        if (!member.isGuest() && member.memberType().equals("NON_COMMERCIAL") && nextOrderCount % LOYALTY_EVERY_N == 0) {
             discount += (subtotal - promotionDiscount) * LOYALTY_DISCOUNT;
         }
 
         double total = subtotal - discount;
 
         // Process payment
-        boolean paid = paymentAPI.processPayment(total, cardNumber, expiry);
-        if (!paid) {
+        Long paymentId = paymentAPI.processPaymentAndReturnId(total, cardNumber, expiry);
+        if (paymentId == null) {
             return new CheckoutOutcome(CheckoutResult.PAYMENT_FAILED,
-                    "Payment could not be processed. Please check your card details.", -1, deliveryAddress);
+                    "Payment could not be processed. Please check your card details.", -1, deliveryAddress, guestEmail);
         }
 
+        String contactEmail = member.isGuest() ? guestEmail : member.email();
+
         // Create order record
-        long orderId = orderDAO.createOrder(member.id(), null, deliveryAddress, items, total, discount);
+        long orderId = orderDAO.createOrder(
+                member.isGuest() ? null : member.id(),
+                contactEmail,
+                deliveryAddress,
+                items,
+                total,
+                discount
+        );
+        paymentAPI.linkPaymentToOrder(paymentId, orderId);
 
         // Deduct stock from ipos_ca
         for (CartItem item : items) {
@@ -86,30 +103,35 @@ public class OrderService {
         }
 
         // Send confirmation email
-        String emailBody = buildConfirmationEmail(member, orderId, items, subtotal, promotionDiscount, discount, total, deliveryAddress);
-        smtpAPI.sendEmail(member.email(), "Order Confirmation — #" + orderId, emailBody);
+        String emailBody = buildConfirmationEmail(member, contactEmail, orderId, items, subtotal, promotionDiscount, discount, total, deliveryAddress);
+        smtpAPI.sendEmail(contactEmail, "Order Confirmation — #" + orderId, emailBody);
 
         // Track promotional purchases for campaign reporting.
         promotionService.recordItemsPurchased(items);
 
         // Clear cart and update order count
-        cartDAO.clearCart(member.id());
-        orderDAO.incrementOrderCount(member.id());
+        if (member.isGuest()) {
+            cartDAO.clearCartBySession(member.guestSessionId());
+        } else {
+            cartDAO.clearCart(member.id());
+            orderDAO.incrementOrderCount(member.id());
+        }
 
         String msg = discount > 0
                 ? String.format("Order placed! You saved £%.2f with available discounts.", discount)
                 : "Order placed successfully!";
 
-        return new CheckoutOutcome(CheckoutResult.SUCCESS, msg, orderId, deliveryAddress);
+        return new CheckoutOutcome(CheckoutResult.SUCCESS, msg, orderId, deliveryAddress, contactEmail);
     }
 
-    private String buildConfirmationEmail(Member member, long orderId, List<CartItem> items,
+    private String buildConfirmationEmail(Member member, String contactEmail, long orderId, List<CartItem> items,
                                           double subtotal, double promotionDiscount, double discount, double total,
                                           String deliveryAddress) {
         StringBuilder sb = new StringBuilder();
         sb.append("Dear ").append(member.fullName()).append(",\n\n");
         sb.append("Thank you for your order. Here is your summary:\n\n");
         sb.append("Order ID: #").append(orderId).append("\n");
+        sb.append("Email: ").append(contactEmail).append("\n");
         sb.append("Delivery Address: ").append(deliveryAddress).append("\n");
         sb.append("─────────────────────────────\n");
         for (CartItem item : items) {
@@ -125,7 +147,8 @@ public class OrderService {
             sb.append(String.format("Loyalty Discount (10%%): -£%.2f%n", discount - promotionDiscount));
         }
         sb.append(String.format("Total:                  £%.2f%n", total));
-        sb.append("\nStatus: RECEIVED\n\n");
+        sb.append("\nOrder Status: RECEIVED\n");
+        sb.append("Track your order: Log in to IPOS-PU and go to 'My Orders' to view live status updates.\n\n");
         sb.append("Your order is being processed. Thank you for using IPOS-PU.\n\n");
         sb.append("Nova Solutions — IPOS-PU Portal");
         return sb.toString();

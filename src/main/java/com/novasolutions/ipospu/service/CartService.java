@@ -23,13 +23,19 @@ public class CartService {
             int available = getAvailableStock(stockItemId);
             return available <= 0 ? AddResult.OUT_OF_STOCK : AddResult.INSUFFICIENT_STOCK;
         }
-        cartDAO.addItem(member.id(), stockItemId, quantity);
+        if (member.isGuest()) {
+            cartDAO.addItemBySession(member.guestSessionId(), stockItemId, quantity);
+        } else {
+            cartDAO.addItem(member.id(), stockItemId, quantity);
+        }
         promotionService.recordItemAdded(stockItemId, quantity);
         return AddResult.SUCCESS;
     }
 
     public List<CartItem> getCart(Member member) {
-        return cartDAO.getCartItems(member.id());
+        return member.isGuest()
+                ? cartDAO.getCartItemsBySession(member.guestSessionId())
+                : cartDAO.getCartItems(member.id());
     }
 
     /**
@@ -47,7 +53,11 @@ public class CartService {
     }
 
     public void clearCart(Member member) {
-        cartDAO.clearCart(member.id());
+        if (member.isGuest()) {
+            cartDAO.clearCartBySession(member.guestSessionId());
+        } else {
+            cartDAO.clearCart(member.id());
+        }
     }
 
     public double getCartTotal(List<CartItem> items) {

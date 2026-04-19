@@ -21,12 +21,14 @@ public class DashboardScreen extends BorderPane {
 
     private ScrollPane buildContent(Stage stage, Member member) {
         // ── Welcome section ───────────────────────────────────────────────
-        String firstName = member.fullName().split(" ")[0];
+        String firstName = member.isGuest() ? "Guest" : member.fullName().split(" ")[0];
 
         Label welcomeHeading = new Label("Welcome back, " + firstName);
         welcomeHeading.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: " + AppStyles.ON_SURFACE + ";");
 
-        Label welcomeSub = new Label("Here is the status of your procurement activities.");
+        Label welcomeSub = new Label(member.isGuest()
+                ? "Browse the live catalogue, build a temporary cart, and place an order without registering."
+                : "Here is the status of your procurement activities.");
         welcomeSub.setStyle(AppStyles.bodyMuted());
 
         VBox welcomeSection = new VBox(6, welcomeHeading, welcomeSub);
@@ -44,17 +46,20 @@ public class DashboardScreen extends BorderPane {
         });
         catalogueCard.setCursor(javafx.scene.Cursor.HAND);
 
-        VBox ordersCard = navCard(
-                "My Orders",
-                "Track requisition statuses, review\npurchase history and pending items.",
-                AppStyles.TERT_FIXED,
-                AppStyles.ON_TERT_VAR
-        );
-        ordersCard.setCursor(javafx.scene.Cursor.HAND);
-        ordersCard.setOnMouseClicked(e -> {
-            stage.getScene().setRoot(new OrdersScreen(stage, member));
-            stage.setTitle("IPOS-PU | My Orders");
-        });
+        VBox ordersCard = null;
+        if (!member.isGuest()) {
+            ordersCard = navCard(
+                    "My Orders",
+                    "Track requisition statuses, review\npurchase history and pending items.",
+                    AppStyles.TERT_FIXED,
+                    AppStyles.ON_TERT_VAR
+            );
+            ordersCard.setCursor(javafx.scene.Cursor.HAND);
+            ordersCard.setOnMouseClicked(e -> {
+                stage.getScene().setRoot(new OrdersScreen(stage, member));
+                stage.setTitle("IPOS-PU | My Orders");
+            });
+        }
 
         VBox profileCard = navCard(
                 "My Profile",
@@ -68,16 +73,22 @@ public class DashboardScreen extends BorderPane {
             stage.setTitle("IPOS-PU | My Profile");
         });
 
-        HBox cardsRow = new HBox(20, catalogueCard, ordersCard, profileCard);
+        HBox cardsRow = ordersCard == null
+                ? new HBox(20, catalogueCard, profileCard)
+                : new HBox(20, catalogueCard, ordersCard, profileCard);
         HBox.setHgrow(catalogueCard, Priority.ALWAYS);
-        HBox.setHgrow(ordersCard, Priority.ALWAYS);
         HBox.setHgrow(profileCard, Priority.ALWAYS);
+        if (ordersCard != null) {
+            HBox.setHgrow(ordersCard, Priority.ALWAYS);
+        }
 
         // ── Ledger summary section ─────────────────────────────────────────
-        Label ledgerTitle = new Label("Account Summary");
+        Label ledgerTitle = new Label(member.isGuest() ? "Guest Access" : "Account Summary");
         ledgerTitle.setStyle(AppStyles.sectionTitle());
 
-        Label ledgerSub = new Label("Your membership information at a glance.");
+        Label ledgerSub = new Label(member.isGuest()
+                ? "Guest sessions are browse-only."
+                : "Your membership information at a glance.");
         ledgerSub.setStyle(AppStyles.bodyMuted());
 
         VBox ledgerHeader = new VBox(4, ledgerTitle, ledgerSub);
@@ -138,6 +149,10 @@ public class DashboardScreen extends BorderPane {
                 summaryRow("Membership Status", member.membershipStatus()),
                 summaryRow("Orders Placed",     String.valueOf(member.orderCount()))
         );
+
+        if (member.isGuest()) {
+            card.getChildren().add(summaryRow("Available Features", "Browse catalogue, promotions, cart, and checkout"));
+        }
 
         if (member.companyName() != null && !member.companyName().isBlank()) {
             card.getChildren().add(1, summaryRow("Company", member.companyName()));

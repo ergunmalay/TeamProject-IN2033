@@ -7,7 +7,7 @@ import com.novasolutions.ipospu.model.PromotionCampaign;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -21,39 +21,41 @@ public class PromotionService {
     private final CampaignDAO campaignDAO = new CampaignDAO();
 
     public PromotionActionResult createCampaign(String name, LocalDate startDate, LocalDate endDate,
-                                                double discountPercent, List<Integer> productIds) {
-        String validation = validateCampaign(name, startDate, endDate, discountPercent, productIds);
+                                                Map<Integer, Double> productDiscounts) {
+        String validation = validateCampaign(name, startDate, endDate, productDiscounts);
         if (validation != null) {
             return new PromotionActionResult(false, validation, null);
         }
 
+        List<Integer> productIds = new ArrayList<>(productDiscounts.keySet());
         String conflict = validateNoConflict(null, startDate, endDate, productIds);
         if (conflict != null) {
             return new PromotionActionResult(false, conflict, null);
         }
 
-        List<Integer> dedupedProductIds = normaliseProductIds(productIds);
+        Map<Integer, Double> deduped = normaliseProductDiscounts(productDiscounts);
         String status = isCurrentlyActive(startDate, endDate) ? "ACTIVE" : "DRAFT";
-        long campaignId = campaignDAO.createCampaign(name.trim(), startDate, endDate, discountPercent, status, dedupedProductIds);
+        long campaignId = campaignDAO.createCampaign(name.trim(), startDate, endDate, status, deduped);
         PromotionCampaign campaign = campaignDAO.getCampaign(campaignId);
         return new PromotionActionResult(true, "Campaign created successfully", campaign);
     }
 
     public PromotionActionResult updateCampaign(long campaignId, String name, LocalDate startDate, LocalDate endDate,
-                                                double discountPercent, List<Integer> productIds) {
-        String validation = validateCampaign(name, startDate, endDate, discountPercent, productIds);
+                                                Map<Integer, Double> productDiscounts) {
+        String validation = validateCampaign(name, startDate, endDate, productDiscounts);
         if (validation != null) {
             return new PromotionActionResult(false, validation, null);
         }
 
+        List<Integer> productIds = new ArrayList<>(productDiscounts.keySet());
         String conflict = validateNoConflict(campaignId, startDate, endDate, productIds);
         if (conflict != null) {
             return new PromotionActionResult(false, conflict, null);
         }
 
-        List<Integer> dedupedProductIds = normaliseProductIds(productIds);
+        Map<Integer, Double> deduped = normaliseProductDiscounts(productDiscounts);
         String status = isCurrentlyActive(startDate, endDate) ? "ACTIVE" : "DRAFT";
-        boolean updated = campaignDAO.updateCampaign(campaignId, name.trim(), startDate, endDate, discountPercent, status, dedupedProductIds);
+        boolean updated = campaignDAO.updateCampaign(campaignId, name.trim(), startDate, endDate, status, deduped);
         if (!updated) {
             return new PromotionActionResult(false, "Campaign not found", null);
         }
@@ -145,7 +147,7 @@ public class PromotionService {
     }
 
     private String validateCampaign(String name, LocalDate startDate, LocalDate endDate,
-                                    double discountPercent, List<Integer> productIds) {
+                                    Map<Integer, Double> productDiscounts) {
         if (name == null || name.isBlank()) {
             return "Campaign name is required";
         }
@@ -155,22 +157,26 @@ public class PromotionService {
         if (endDate.isBefore(startDate)) {
             return "End date must be on or after the start date";
         }
-        if (discountPercent <= 0 || discountPercent > 100) {
-            return "Discount percent must be between 0 and 100";
-        }
-        if (productIds == null || productIds.isEmpty()) {
+        if (productDiscounts == null || productDiscounts.isEmpty()) {
             return "At least one product must be selected";
+        }
+        for (Map.Entry<Integer, Double> entry : productDiscounts.entrySet()) {
+            double d = entry.getValue();
+            if (d <= 0 || d > 100) {
+                return "Discount for product " + entry.getKey() + " must be between 0 and 100";
+            }
         }
         return null;
     }
 
-    private List<Integer> normaliseProductIds(List<Integer> productIds) {
-        Set<Integer> ordered = new LinkedHashSet<>(productIds);
-        return new ArrayList<>(ordered);
+    private Map<Integer, Double> normaliseProductDiscounts(Map<Integer, Double> productDiscounts) {
+        // LinkedHashMap preserves insertion order and deduplicates by key
+        return new LinkedHashMap<>(productDiscounts);
     }
 
     private String validateNoConflict(Long currentCampaignId, LocalDate startDate, LocalDate endDate, List<Integer> productIds) {
-        List<Integer> candidateProducts = normaliseProductIds(productIds);
+        // Deduplicate while preserving order
+        List<Integer> candidateProducts = new ArrayList<>(new LinkedHashSet<>(productIds));
         List<PromotionCampaign> existingCampaigns = campaignDAO.getAllCampaigns();
 
         for (PromotionCampaign existing : existingCampaigns) {

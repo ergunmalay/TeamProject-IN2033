@@ -44,7 +44,9 @@ public class CheckoutScreen extends BorderPane {
         Label pageTitle = new Label("Checkout");
         pageTitle.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: " + AppStyles.ON_SURFACE + ";");
 
-        Label pageSub = new Label("Enter your delivery address and payment details.");
+        Label pageSub = new Label(member.isGuest()
+                ? "Guest checkout: enter your email, delivery address, and payment details."
+                : "Enter your delivery address and payment details.");
         pageSub.setStyle(AppStyles.bodyMuted());
 
         VBox header = new VBox(10, backBtn, pageTitle, pageSub);
@@ -52,6 +54,32 @@ public class CheckoutScreen extends BorderPane {
         // ── Delivery address section ──────────────────────────────────────────
         Label addressTitle = new Label("Delivery Address");
         addressTitle.setStyle(AppStyles.sectionTitle());
+
+        VBox guestEmailCard = null;
+        TextField guestEmailField = null;
+        if (member.isGuest()) {
+            Label guestEmailTitle = new Label("Guest Contact");
+            guestEmailTitle.setStyle(AppStyles.sectionTitle());
+
+            Label guestEmailHelp = new Label("Use this email to receive your order confirmation.");
+            guestEmailHelp.setStyle(AppStyles.bodyMuted());
+            guestEmailHelp.setWrapText(true);
+
+            Label emailLabel = new Label("EMAIL ADDRESS");
+            emailLabel.setStyle(AppStyles.fieldLabel());
+
+            guestEmailField = new TextField();
+            guestEmailField.setPromptText("name@company.com");
+            guestEmailField.setStyle(AppStyles.inputField());
+
+            VBox emailGroup = new VBox(6, emailLabel, guestEmailField);
+
+            guestEmailCard = new VBox(16, guestEmailTitle, guestEmailHelp, emailGroup);
+            guestEmailCard.setPadding(new Insets(28));
+            guestEmailCard.setStyle("-fx-background-color: " + AppStyles.SURFACE_LOWEST + "; -fx-background-radius: 12;");
+            guestEmailCard.setEffect(AppStyles.subtleShadow());
+        }
+        final TextField guestEmailInput = guestEmailField;
 
         Label line1Label = new Label("ADDRESS LINE 1");
         line1Label.setStyle(AppStyles.fieldLabel());
@@ -163,7 +191,9 @@ public class CheckoutScreen extends BorderPane {
         paymentCard.setEffect(AppStyles.subtleShadow());
 
         // ── Left column: address + payment stacked ────────────────────────────
-        VBox formColumn = new VBox(20, addressCard, paymentCard);
+        VBox formColumn = guestEmailCard == null
+                ? new VBox(20, addressCard, paymentCard)
+                : new VBox(20, guestEmailCard, addressCard, paymentCard);
         HBox.setHgrow(formColumn, Priority.ALWAYS);
 
         // ── Order summary ─────────────────────────────────────────────────────
@@ -229,7 +259,15 @@ public class CheckoutScreen extends BorderPane {
             String postcode = postcodeField.getText().trim();
             String cardInput   = cardField.getText().trim();
             String expiryInput = expiryField.getText().trim();
+            String guestEmail = member.isGuest() && guestEmailInput != null
+                    ? guestEmailInput.getText().trim()
+                    : null;
 
+            if (member.isGuest() && (guestEmail == null || guestEmail.isBlank() || !guestEmail.contains("@"))) {
+                statusLabel.setStyle(AppStyles.errorStyle());
+                statusLabel.setText("Please enter a valid email address.");
+                return;
+            }
             if (line1.isBlank() || city.isBlank() || postcode.isBlank()) {
                 statusLabel.setStyle(AppStyles.errorStyle());
                 statusLabel.setText("Please fill in your delivery address.");
@@ -252,6 +290,7 @@ public class CheckoutScreen extends BorderPane {
             }
 
             String deliveryAddress = line1 + (line2.isBlank() ? "" : ", " + line2) + ", " + city + ", " + postcode;
+            final String checkoutGuestEmail = guestEmail;
 
             placeOrderBtn.setDisable(true);
             placeOrderBtn.setText("Processing...");
@@ -259,7 +298,9 @@ public class CheckoutScreen extends BorderPane {
 
             new Thread(() -> {
                 OrderService.CheckoutOutcome outcome =
-                        orderService.checkout(member, cardNumber, expiryInput, deliveryAddress);
+                        member.isGuest()
+                                ? orderService.checkout(member, cardNumber, expiryInput, deliveryAddress, checkoutGuestEmail)
+                                : orderService.checkout(member, cardNumber, expiryInput, deliveryAddress);
                 javafx.application.Platform.runLater(() -> {
                     switch (outcome.result()) {
                         case SUCCESS -> {

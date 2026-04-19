@@ -42,8 +42,8 @@ public class SideBar extends VBox {
         VBox navOrderAdmin = member != null && "ADMIN".equals(member.memberType())
                 ? navItem("Order Admin", "order-admin".equals(activeItem))
                 : null;
-        VBox navCart      = navItem("My Cart",        "cart".equals(activeItem));
-        VBox navOrders    = navItem("My Orders",      "orders".equals(activeItem));
+        VBox navCart      = member != null ? navItem("My Cart", "cart".equals(activeItem)) : null;
+        VBox navOrders    = member != null && !member.isGuest() ? navItem("My Orders", "orders".equals(activeItem)) : null;
         VBox navProfile   = navItem("My Profile",     "profile".equals(activeItem));
 
         navCatalogue.setOnMouseClicked(e -> {
@@ -79,15 +79,19 @@ public class SideBar extends VBox {
             });
         }
 
-        navCart.setOnMouseClicked(e -> {
-            stage.getScene().setRoot(new CartScreen(stage, member));
-            stage.setTitle("IPOS-PU | My Cart");
-        });
+        if (navCart != null) {
+            navCart.setOnMouseClicked(e -> {
+                stage.getScene().setRoot(new CartScreen(stage, member));
+                stage.setTitle("IPOS-PU | My Cart");
+            });
+        }
 
-        navOrders.setOnMouseClicked(e -> {
-            stage.getScene().setRoot(new OrderHistoryScreen(stage, member));
-            stage.setTitle("IPOS-PU | My Orders");
-        });
+        if (navOrders != null) {
+            navOrders.setOnMouseClicked(e -> {
+                stage.getScene().setRoot(new OrderHistoryScreen(stage, member));
+                stage.setTitle("IPOS-PU | My Orders");
+            });
+        }
 
         navProfile.setOnMouseClicked(e -> {
             stage.getScene().setRoot(new MemberProfileScreen(stage, member));
@@ -100,7 +104,9 @@ public class SideBar extends VBox {
         if (navAdmin != null) nav.getChildren().add(navAdmin);
         if (navReports != null) nav.getChildren().add(navReports);
         if (navOrderAdmin != null) nav.getChildren().add(navOrderAdmin);
-        nav.getChildren().addAll(navCart, navOrders, navProfile);
+        if (navCart != null) nav.getChildren().add(navCart);
+        if (navOrders != null) nav.getChildren().add(navOrders);
+        nav.getChildren().add(navProfile);
 
         // ── Spacer ────────────────────────────────────────────────────────
         Region spacer = new Region();
@@ -115,6 +121,7 @@ public class SideBar extends VBox {
                 ? switch (member.memberType()) {
                     case "ADMIN" -> "System Administrator";
                     case "COMMERCIAL" -> "Commercial Member";
+                    case "GUEST" -> "Guest Access";
                     default -> "Non-Commercial Member";
                 }
                 : "";

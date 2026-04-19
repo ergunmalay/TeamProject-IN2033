@@ -2,17 +2,18 @@ package com.novasolutions.ipospu.service;
 
 import com.novasolutions.ipospu.db.CommercialApplicationDAO;
 import com.novasolutions.ipospu.db.MemberDAO;
+import com.novasolutions.ipospu.impl.PU_SMTP_API;
 import com.novasolutions.ipospu.model.Member;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.security.SecureRandom;
-import java.util.UUID;
 
 // I put all membership business logic here, keeping the controllers and DAO thin.
 public class MembershipService {
 
     private final MemberDAO memberDAO = new MemberDAO();
     private final CommercialApplicationDAO commercialApplicationDAO = new CommercialApplicationDAO();
+    private final PU_SMTP_API smtpAPI = new PU_SMTP_API();
 
     // I define these character pools to satisfy the password complexity requirements in UC-01a.
     private static final String LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -45,6 +46,23 @@ public class MembershipService {
         }
 
         return new String(password);
+    }
+
+    private String buildNonCommercialRegistrationEmail(String name, String email, String temporaryPassword) {
+        return """
+                Hello %s,
+
+                Your IPOS-PU non-commercial account has been created successfully.
+
+                Login email: %s
+                Temporary password: %s
+
+                For security, you will be prompted to change this password when you log in for the first time.
+
+                If you did not request this account, please contact support immediately.
+
+                IPOS-PU
+                """.formatted(name, email, temporaryPassword);
     }
 
     /**
@@ -87,7 +105,17 @@ public class MembershipService {
         // I pass the full_name value and set the member type and status for non-commercial registration.
         boolean created = memberDAO.createMember(name, email, hashedPassword, "NON_COMMERCIAL", "APPROVED");
         if (created) {
+            boolean emailed = smtpAPI.sendEmail(
+                    email,
+                    "IPOS-PU Account Created",
+                    buildNonCommercialRegistrationEmail(name, email, plainPassword)
+            );
             System.out.println("✅ Registration successful for " + name);
+            if (emailed) {
+                System.out.println("📧 Temporary password emailed to " + email);
+            } else {
+                System.out.println("⚠️ Temporary password email could not be sent immediately and was queued for retry.");
+            }
             return RegistrationResult.success(plainPassword);
         } else {
             System.out.println("❌ Registration failed for " + name);
@@ -102,9 +130,8 @@ public class MembershipService {
      * company_name are stored) alongside the commercial_applications row.
      * Both inserts happen in a single transaction inside the DAO.
      * <p>
-     * The member is given a placeholder BCrypt hash of a random UUID — nobody
-     * knows the plaintext so the account cannot be logged into until an SA
-     * approves the application and sets a real password.
+     * The member is given a generated temporary password, hashed with BCrypt,
+     * when the application is submitted.
      *
      * @param applicantName      full name of the applicant (→ members.full_name)
      * @param companyName        trading name (→ members.company_name)
@@ -153,17 +180,16 @@ public class MembershipService {
                     "An account already exists for this email address");
         }
 
-        // I generate a BCrypt hash of a random UUID as a placeholder.
-        // The plaintext is discarded immediately so the account is effectively locked
-        // until an SA approves the application and sets a real password.
-        String placeholderHash = BCrypt.hashpw(UUID.randomUUID().toString(), BCrypt.gensalt());
+        String plainPassword = generatePassword();
+        String hashedPassword = BCrypt.hashpw(plainPassword, BCrypt.gensalt());
 
         boolean submitted = commercialApplicationDAO.submitApplication(
-                applicantName, companyName, placeholderHash,
+                applicantName, companyName, hashedPassword,
                 companiesHouseNumber, directorNames, businessType, businessAddress, email);
 
         if (submitted) {
             System.out.println("✅ Commercial application submitted for: " + email);
+            System.out.println("🔐 Temporary commercial account password for " + email + ": " + plainPassword);
             return CommercialApplicationResult.success(
                     "Your application has been submitted for review. " +
                     "A System Administrator will contact you at " + email + " once it has been processed.");
@@ -186,12 +212,21 @@ public class MembershipService {
             return LoginResult.failure("No member found with that email");
         }
 
+        if ("PENDING".equalsIgnoreCase(member.membershipStatus())) {
+            return LoginResult.failure("Your account is pending approval and cannot be used yet");
+        }
+
         if (BCrypt.checkpw(password, member.passwordHash())) {
             return LoginResult.success("Login successful", member);
         } else {
             return LoginResult.failure("Invalid email or password");
         }
     }
+
+    public LoginResult authenticateGuest() {
+        return LoginResult.guest("Guest access granted");
+    }
+
     public ChangePasswordResult changePassword(String email, String newPassword, String confirmPassword) {
 
         // 1. Null checks

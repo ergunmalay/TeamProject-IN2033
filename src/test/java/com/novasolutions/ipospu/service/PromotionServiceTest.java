@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,8 +41,7 @@ class PromotionServiceTest {
                 createdCampaignName,
                 LocalDate.now().plusDays(30),
                 LocalDate.now().plusDays(37),
-                12.5,
-                List.of(productId)
+                Map.of(productId, 12.5)
         );
 
         assertTrue(result.success());
@@ -84,8 +84,7 @@ class PromotionServiceTest {
                 createdCampaignName,
                 LocalDate.now().plusDays(30),
                 LocalDate.now().plusDays(37),
-                10.0,
-                List.of(productId)
+                Map.of(productId, 10.0)
         );
 
         assertTrue(created.success());
@@ -108,8 +107,7 @@ class PromotionServiceTest {
                 "Overlap Test " + System.currentTimeMillis(),
                 seedCampaign.startDate(),
                 seedCampaign.endDate(),
-                15.0,
-                List.of(productId)
+                Map.of(productId, 15.0)
         );
 
         assertFalse(result.success());

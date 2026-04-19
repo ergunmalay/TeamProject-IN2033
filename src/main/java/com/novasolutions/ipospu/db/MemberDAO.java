@@ -9,6 +9,45 @@ import java.sql.SQLException;
 
 public class MemberDAO {
 
+    public Member findById(long memberId) {
+        String sql = """
+                SELECT id, full_name, email, password_hash, member_type, membership_status,
+                       company_name, order_count, is_first_login, created_at
+                FROM members
+                WHERE id = ?
+                """;
+
+        try (Connection connection = DatabaseConnection.getInstance().getPuConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setLong(1, memberId);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new Member(
+                            resultSet.getLong("id"),
+                            resultSet.getString("full_name"),
+                            resultSet.getString("email"),
+                            resultSet.getString("password_hash"),
+                            resultSet.getString("member_type"),
+                            resultSet.getString("membership_status"),
+                            resultSet.getString("company_name"),
+                            resultSet.getInt("order_count"),
+                            resultSet.getBoolean("is_first_login"),
+                            null,
+                            resultSet.getTimestamp("created_at").toLocalDateTime()
+                    );
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[ERROR] Failed to fetch member by ID: " + memberId);
+            System.err.println(e.getMessage());
+        }
+
+        return null;
+    }
+
     public Member findByEmail(String email) {
         String sql = """
                 SELECT id, full_name, email, password_hash, member_type, membership_status,
@@ -34,6 +73,7 @@ public class MemberDAO {
                             resultSet.getString("company_name"),
                             resultSet.getInt("order_count"),
                             resultSet.getBoolean("is_first_login"),
+                            null,
                             resultSet.getTimestamp("created_at").toLocalDateTime()
                     );
                 }

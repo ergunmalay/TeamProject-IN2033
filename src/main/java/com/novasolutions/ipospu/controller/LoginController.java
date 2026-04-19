@@ -18,4 +18,8 @@ public class LoginController {
     public LoginResult login(String email, String password) {
         return membershipService.authenticate(email, password);
     }
+
+    public LoginResult loginAsGuest() {
+        return membershipService.authenticateGuest();
+    }
 }

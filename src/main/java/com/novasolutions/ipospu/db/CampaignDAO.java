@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class CampaignDAO {
 
@@ -85,8 +86,8 @@ public class CampaignDAO {
     }
 
     public long createCampaign(String name, LocalDate startDate, LocalDate endDate,
-                               double discountPercent, String status,
-                               List<Integer> productIds) {
+                               String status,
+                               Map<Integer, Double> productDiscounts) {
         String campaignSql = """
                 INSERT INTO ipos_pu.promotion_campaigns
                     (name, start_date, end_date, status, click_count, created_at)
@@ -119,7 +120,7 @@ public class CampaignDAO {
                 campaignId = keys.getLong(1);
             }
 
-            insertCampaignProducts(conn, campaignId, productIds, discountPercent);
+            insertCampaignProducts(conn, campaignId, productDiscounts);
             conn.commit();
             return campaignId;
         } catch (SQLException e) {
@@ -128,8 +129,8 @@ public class CampaignDAO {
     }
 
     public boolean updateCampaign(long campaignId, String name, LocalDate startDate, LocalDate endDate,
-                                  double discountPercent, String status,
-                                  List<Integer> productIds) {
+                                  String status,
+                                  Map<Integer, Double> productDiscounts) {
         String updateSql = """
                 UPDATE ipos_pu.promotion_campaigns
                 SET name = ?, start_date = ?, end_date = ?, status = ?
@@ -158,7 +159,7 @@ public class CampaignDAO {
                 ps.executeUpdate();
             }
 
-            insertCampaignProducts(conn, campaignId, productIds, discountPercent);
+            insertCampaignProducts(conn, campaignId, productDiscounts);
             conn.commit();
             return true;
         } catch (SQLException e) {
@@ -227,9 +228,9 @@ public class CampaignDAO {
         }
     }
 
-    private void insertCampaignProducts(Connection conn, long campaignId, List<Integer> productIds, double discountPercent)
+    private void insertCampaignProducts(Connection conn, long campaignId, Map<Integer, Double> productDiscounts)
             throws SQLException {
-        if (productIds == null || productIds.isEmpty()) {
+        if (productDiscounts == null || productDiscounts.isEmpty()) {
             return;
         }
 
@@ -240,10 +241,10 @@ public class CampaignDAO {
                 """;
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (int productId : productIds) {
+            for (Map.Entry<Integer, Double> entry : productDiscounts.entrySet()) {
                 ps.setLong(1, campaignId);
-                ps.setInt(2, productId);
-                ps.setDouble(3, discountPercent);
+                ps.setInt(2, entry.getKey());
+                ps.setDouble(3, entry.getValue());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -323,9 +324,9 @@ public class CampaignDAO {
 
     private List<CampaignProduct> loadCampaignProducts(Connection conn, long campaignId) throws SQLException {
         String sql = """
-                SELECT cp.id, cp.campaign_id, cp.product_id, cp.discount_percent, p.name AS product_name
+                SELECT cp.id, cp.campaign_id, cp.product_id, cp.discount_percent, csi.item_name AS product_name
                 FROM ipos_pu.campaign_products cp
-                LEFT JOIN ipos_pu.products p ON p.id = cp.product_id
+                LEFT JOIN ipos_ca.ca_stock_items csi ON csi.stock_item_id = cp.product_id
                 WHERE cp.campaign_id = ?
                 ORDER BY cp.id ASC
                 """;

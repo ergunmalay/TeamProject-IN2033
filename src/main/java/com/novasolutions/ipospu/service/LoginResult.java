@@ -17,6 +17,10 @@ public class LoginResult {
         return new LoginResult(true, message, member);
     }
 
+    public static LoginResult guest(String message) {
+        return new LoginResult(true, message, Member.guest());
+    }
+
     public static LoginResult failure(String message) {
         return new LoginResult(false, message, null);
     }
