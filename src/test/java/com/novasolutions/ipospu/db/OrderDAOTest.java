@@ -11,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * "My Orders" screen and the admin order-management screen.
  *
  * The tests run against the configured ipos_pu MySQL schema. Each test creates
- * its own timestamped member/order so that the test data is easy to identify.
+ * its own timestamped member/order so that the test data is isolated and easy
+ * to identify.
  */
 public class OrderDAOTest {
 
@@ -70,7 +73,7 @@ public class OrderDAOTest {
 
         createdOrderId = orderDAO.createOrder(
                 testMemberId,
-                testEmail,
+                null,
                 "1 Test Street, London",
                 List.of(item),
                 product.getPrice(),
@@ -82,20 +85,37 @@ public class OrderDAOTest {
 
     @AfterEach
     void cleanup() {
-        /*
-         *
-         *
-         * 
-         *
-         *
-         */
-        try {
+        try (Connection connection = DatabaseConnection.getInstance().getPuConnection()) {
+            connection.setAutoCommit(false);
+
             if (createdOrderId > 0) {
-                orderDAO.updateOrderStatus(createdOrderId, "RECEIVED");
-                System.out.println("Cleanup note: test order reset to RECEIVED.");
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM ipos_pu.order_items WHERE order_id = ?")) {
+                    ps.setLong(1, createdOrderId);
+                    ps.executeUpdate();
+                }
+
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM ipos_pu.orders WHERE id = ?")) {
+                    ps.setLong(1, createdOrderId);
+                    ps.executeUpdate();
+                }
             }
+
+            if (testEmail != null) {
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM ipos_pu.members WHERE email = ?")) {
+                    ps.setString(1, testEmail);
+                    ps.executeUpdate();
+                }
+            }
+
+            connection.commit();
+            System.out.println("Cleanup complete: test member and seed order deleted.");
+
         } catch (Exception e) {
-            System.out.println("Cleanup note: test order was left in the database for traceability.");
+            System.out.println("Cleanup warning: test data may remain in the database.");
+            System.out.println(e.getMessage());
         }
     }
 
